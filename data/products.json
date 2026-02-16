@@ -1,0 +1,24 @@
+[
+  {
+    "id": "P1",
+    "name": "Laptop",
+    "category": "electronics",
+    "weight": 2.5,
+    "volume": 8,
+    "location": [1, 1],
+    "frequency": "high",
+    "fragile": true,
+    "incompatible_with": []
+  },
+  {
+    "id": "P2",
+    "name": "Book",
+    "category": "books",
+    "weight": 0.5,
+    "volume": 1,
+    "location": [3, 2],
+    "frequency": "medium",
+    "fragile": false,
+    "incompatible_with": []
+  }
+]

@@ -1,0 +1,12 @@
+[
+  {
+    "id": "O1",
+    "received_time": "08:00",
+    "deadline": "10:00",
+    "priority": "standard",
+    "items": [
+      { "product_id": "P1", "quantity": 1 },
+      { "product_id": "P2", "quantity": 2 }
+    ]
+  }
+]
