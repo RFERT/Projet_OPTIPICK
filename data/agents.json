@@ -62,4 +62,6 @@
     "cost_per_hour": 3,
     "restrictions": { "requires_human": true }
   }
+
 ]
+
