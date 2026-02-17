@@ -6,7 +6,8 @@
     "capacity_volume": 30,
     "speed": 2.0,
     "cost_per_hour": 5,
-    "restrictions": {}
+   "restrictions": { "no_zones": ["C"], "no_fragile": true, "max_item_weight": 10 }
+
   },
   {
     "id": "H1",
@@ -16,5 +17,17 @@
     "speed": 1.5,
     "cost_per_hour": 25,
     "restrictions": {}
+  },
+
+  {
+  "id": "C1",
+  "type": "cart",
+  "capacity_weight": 100,
+  "capacity_volume": 200,
+  "speed": 1.0,
+  "cost_per_hour": 10,
+  "restrictions": {}
   }
+
 ]
+

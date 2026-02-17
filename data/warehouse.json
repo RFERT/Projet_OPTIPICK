@@ -1,5 +1,7 @@
 {
   "dimensions": { "width": 10, "height": 8 },
-  "zones": {},
+  "zones": {
+    "C": { "name": "Food", "coords": [[3, 2]] }
+  },
   "entry_point": [0, 0]
 }

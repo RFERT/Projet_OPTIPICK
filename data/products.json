@@ -12,8 +12,8 @@
   },
   {
     "id": "P2",
-    "name": "Book",
-    "category": "books",
+    "name": "FoodItem",
+    "category": "food",
     "weight": 0.5,
     "volume": 1,
     "location": [3, 2],
