@@ -85,7 +85,7 @@ class Team:
 
 
 class OrderItem:
-    def __init__(self, product_id: str, quantity: int, zone: str):
+    def __init__(self, product_id: str, quantity: int, zone: str = None):
         self.product_id = product_id
         self.quantity = quantity
         self.zone = zone
