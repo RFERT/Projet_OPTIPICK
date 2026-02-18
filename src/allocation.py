@@ -21,6 +21,9 @@ class AllocationResult:
 
 
 def compute_order_totals(order: Order, products: Dict[str, Product]) -> Tuple[float, float]:
+    """
+    Calcule le poids et le volume de la commande
+    """
     total_w = 0.0
     total_v = 0.0
     for it in order.items:
@@ -38,18 +41,21 @@ def allocate_first_fit_day1(
     agents: List[Agent],
     products: Dict[str, Product],
 ) -> AllocationResult:
-    assignments: Dict[str, List[str]] = {a.id: [] for a in agents}
+    """
+    Alloue les commandes naïvement au premier agent capable de prendre la commande
+    """
+    assignments: Dict[str, List[str]] = {a.id : [] for a in agents}
     unassigned: List[str] = []
     order_totals: Dict[str, Tuple[float, float]] = {}
     cart_human: Dict[str, str] = {}
 
     for order in orders:
-        w, v = compute_order_totals(order, products)
-        order_totals[order.id] = (w, v)
+        weight, volume = compute_order_totals(order, products)
+        order_totals[order.id] = (weight, volume)
 
         placed = False
         for agent in agents:
-            if w <= agent.capacity_weight and v <= agent.capacity_volume:
+            if weight <= agent.capacity_weight and volume <= agent.capacity_volume:
                 assignments[agent.id].append(order.id)
                 placed = True
                 break

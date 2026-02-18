@@ -48,10 +48,20 @@ class Product:
     fragile: bool
     incompatible_with: List[str] = field(default_factory=list)
 
-class Agent:
+# @dataclass
+class Agent(id):
+    """
+    Classe Agents détaillant les informations de l'agent
+    N'emploie pas de sous-classe
+    """
     # id: str
     # type: str  # "robot" | "human" | "cart"
-
+    # restrictions: dict[str,any]
+    # capacity_weight: int
+    # capacity_volume: int
+    # speed: float
+    # cost_per_hour: int
+    
     def __init__(self, type, id):
         if type == "robot":
             self.restrictions = {"Zone" : "C", "fragile" : True, "weight" : 10, "agent" : None}
@@ -85,7 +95,7 @@ class Team:
     def __str__(self):
         return ", ".join(self.agents.keys())
 
-@dataclass(frozen=True)
+@dataclass
 class OrderItem:
     product_id: str
     quantity: int
@@ -97,4 +107,4 @@ class Order:
     received_time: str
     deadline: str
     priority: str
-    items: List[OrderItem]
+    items: List[OrderItem] = field(default_factory=list)

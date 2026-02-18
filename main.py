@@ -11,9 +11,7 @@ from src.utils import manhattan
 # ---------------------------
 def run_day1(warehouse, products, agents, orders):
     print("\n=== JOUR 1 : Allocation naïve (sans contraintes) ===")
-
     result = allocate_first_fit_day1(orders, agents, products)
-
     print("\n== Allocation (First-Fit) ==")
     for agent in agents:
         oids = result.assignments[agent.id]

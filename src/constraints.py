@@ -2,8 +2,6 @@ from typing import Dict, List
 from .models import Product, Agent, Order
 
 
-
-
 def check_capacity(order: Order, agent: Agent, products: Dict[str, Product]) -> bool:
     total_w = 0
     total_v = 0
