@@ -5,7 +5,7 @@ from src.loader import load_json
 from src.models import Agent, Order, OrderItem, Product, Team, Warehouse
 from src.models import Location
 from src.utils import manhattan
-from src.routing import extract_unique_locations, build_nodes_with_entry
+from src.routing import extract_unique_locations, build_nodes_with_entry, compute_distance_matrix
 # ---------------------------
 def run_day1(warehouse, products, team, orders):
     print("\n=== JOUR 1 : Allocation naïve (sans contraintes) ===")
@@ -22,7 +22,7 @@ def run_day1(warehouse, products, team, orders):
 
     dist_one_way = estimate_total_distance(orders, products, warehouse, round_trip=False)
     dist_round_trip = estimate_total_distance(orders, products, warehouse, round_trip=True)
-    assigned_count = sum(len(v) for v in result.assignments.values())
+    assigned_count = sum(len(assignment_list) for assignment_list in result.assignments.values())
 
     print("\n== Évaluation Jour 1 ==")
     print(f"Nombre de commandes assignées : {assigned_count}/{len(orders)}")
@@ -69,7 +69,7 @@ def run_day2(warehouse, products, agents, orders):
 
     dist_one_way = estimate_total_distance(orders, products, warehouse, round_trip=False)
     dist_round_trip = estimate_total_distance(orders, products, warehouse, round_trip=True)
-    assigned_count = sum(len(v) for v in result.assignments.values())
+    assigned_count = sum(len(assignment_list) for assignment_list in result.assignments.values())
 
     print("\n== Évaluation Jour 2 ==")
     print(f"Nombre de commandes assignées : {assigned_count}/{len(orders)}")
@@ -106,18 +106,18 @@ def main():
     
     # Convert products list to dictionary with Product objects
     products = {
-        p['id']: Product(
-            id=p['id'],
-            name=p['name'],
-            category=p['category'],
-            weight=p['weight'],
-            volume=p['volume'],
-            location=Location(p['location'][0], p['location'][1]),
-            frequency=p['frequency'],
-            fragile=p['fragile'],
-            incompatible_with=p.get('incompatible_with', [])
+        product_dict['id']: Product(
+            id=product_dict['id'],
+            name=product_dict['name'],
+            category=product_dict['category'],
+            weight=product_dict['weight'],
+            volume=product_dict['volume'],
+            location=Location(product_dict['location'][0], product_dict['location'][1]),
+            frequency=product_dict['frequency'],
+            fragile=product_dict['fragile'],
+            incompatible_with=product_dict.get('incompatible_with', [])
         )
-        for p in products_list
+        for product_dict in products_list
     }
     
     team = Team(agents)
@@ -130,13 +130,13 @@ def main():
     # Convert order dictionaries and item dictionaries to Order and OrderItem objects
     orders = [
         Order(
-            id=o['id'],
-            received_time=o['received_time'],
-            deadline=o['deadline'],
-            priority=o['priority'],
-            items=[OrderItem(product_id=item['product_id'], quantity=item['quantity'], zone=None) for item in o['items']]
+            id=order_dict['id'],
+            received_time=order_dict['received_time'],
+            deadline=order_dict['deadline'],
+            priority=order_dict['priority'],
+            items=[OrderItem(product_id=item['product_id'], quantity=item['quantity'], zone=None) for item in order_dict['items']]
         )
-        for o in orders
+        for order_dict in orders
     ]
 
     print("Warehouse:", warehouse.width, "x", warehouse.height, "| entry=", warehouse.entry_point)
@@ -154,11 +154,12 @@ def main():
     run_day3_step1(warehouse, products, team, orders)
     
     # Jour 3 - Étape : Ajouter l'entrée (point de départ et retour)
-    run_day3_step2(warehouse, products, team, orders)
-
+    run_day3_step2(warehouse, products, team, orders)    
+    # Jour 3 - Étape : Calculer la matrice de distances
+    run_day3_step3(warehouse, products, team, orders)
 
 # ---------------------------
-# Jour 3 - Étape 1 : Extraction des emplacements uniques
+# Jour 3 - Étape  : Extraction des emplacements uniques
 # ---------------------------
 def run_day3_step1(warehouse, products, team, orders):
     """
@@ -180,10 +181,10 @@ def run_day3_step1(warehouse, products, team, orders):
         agent_products = []
         for order_id in order_ids:
             # Trouver la commande
-            order = next((o for o in orders if o.id == order_id), None)
-            if order:
+            found_order = next((candidate_order for candidate_order in orders if candidate_order.id == order_id), None)
+            if found_order:
                 # Pour chaque item de la commande
-                for item in order.items:
+                for item in found_order.items:
                     # Ajouter le produit
                     if item.product_id in products:
                         agent_products.append(products[item.product_id])
@@ -232,9 +233,9 @@ def run_day3_step2(warehouse, products, team, orders):
         # Récupérer tous les produits de ces commandes
         agent_products = []
         for order_id in order_ids:
-            order = next((o for o in orders if o.id == order_id), None)
-            if order:
-                for item in order.items:
+            found_order = next((candidate_order for candidate_order in orders if candidate_order.id == order_id), None)
+            if found_order:
+                for item in found_order.items:
                     if item.product_id in products:
                         agent_products.append(products[item.product_id])
         
@@ -258,6 +259,87 @@ def run_day3_step2(warehouse, products, team, orders):
             else:
                 # Trouver quel produit est à ce nœud
                 print(f"       [{i}]  Emplacement      : {node}")
+        
+        print()
+
+
+# ---------------------------
+# Jour 3 - Étape  : Calculer la matrice de distances
+# ---------------------------
+def run_day3_step3(warehouse, products, team, orders):
+    """
+    JOUR 3 - ÉTAPE : Calculer la matrice de distances Manhattan.
+    """
+    print("\n=== JOUR 3 - ÉTAPE  : Calculer la matrice de distances ===\n")
+    
+    # D'abord, allocate les commandes aux agents (comme Jour 2)
+    from src.allocation import allocate_first_fit_day2
+    result = allocate_first_fit_day2(orders, list(team.agents.values()), products, warehouse)
+    
+    # Pour chaque agent, construire et afficher la matrice de distances
+    for agent in team.agents.values():
+        # Récupérer les IDs des commandes assignées à cet agent
+        order_ids = result.assignments[agent.id]
+        
+        # Si l'agent n'a rien à faire, passer
+        if not order_ids:
+            continue
+        
+        # Récupérer tous les produits de ces commandes
+        agent_products = []
+        for order_id in order_ids:
+            found_order = next((candidate_order for candidate_order in orders if candidate_order.id == order_id), None)
+            if found_order:
+                for item in found_order.items:
+                    if item.product_id in products:
+                        agent_products.append(products[item.product_id])
+        
+        # Étapes précédentes
+        unique_locations = extract_unique_locations(agent_products)
+        nodes = build_nodes_with_entry(warehouse.entry_point, unique_locations)
+        
+        # ÉTAPE  : Calculer la matrice de distances
+        distance_matrix = compute_distance_matrix(nodes)
+        
+        # Afficher les résultats
+        print(f" Agent: {agent.id} (Type: {agent.type})")
+        print(f"   • Nombre de nœuds : {len(nodes)}")
+        print(f"   • Taille matrice : {len(distance_matrix)} x {len(distance_matrix[0])}")
+        
+        # Afficher la matrice complète si elle n'est pas trop grande
+        if len(nodes) <= 6:
+            print(f"\n    Matrice de distances (complète) :")
+            
+            # En-têtes des colonnes
+            header = "      "
+            for col_index in range(len(nodes)):
+                header += f"[{col_index}]  "
+            print(header)
+            
+            # Lignes de la matrice
+            for row_index, row in enumerate(distance_matrix):
+                line = f"   [{row_index}]  "
+                for dist in row:
+                    line += f"{dist:3d}  "
+                print(line)
+        else:
+            # Pour les grandes matrices, afficher des statistiques
+            all_distances = []
+            for row in distance_matrix:
+                all_distances.extend(row)
+            
+            print(f"\n    Statistiques de la matrice (trop grande pour affichage complet) :")
+            print(f"       • Distance minimum : {min(all_distances)}")
+            print(f"       • Distance maximum : {max(all_distances)}")
+            print(f"       • Distance moyenne : {sum(all_distances) / len(all_distances):.1f}")
+            
+            # Afficher un petit exemple
+            print(f"\n    Exemples de distances (premiers 4 nœuds) :")
+            for row_index in range(min(4, len(distance_matrix))):
+                line = f"       Du nœud [{row_index}] : "
+                for col_index in range(min(4, len(distance_matrix[0]))):
+                    line += f"{distance_matrix[row_index][col_index]:3d}  "
+                print(line)
         
         print()
 
