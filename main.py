@@ -1,7 +1,8 @@
 from pathlib import Path
 
 from src.allocation import allocate_first_fit_day1, allocate_first_fit_day2, estimate_total_distance
-from src.loader import load_agents, load_orders, load_products, load_warehouse
+from src.loader import load_json
+from src.models import Agent, Order, Product, Team, Warehouse
 from src.models import Location
 from src.utils import manhattan
 
@@ -9,13 +10,13 @@ from src.utils import manhattan
 # ---------------------------
 # Jour 1 (naïf)
 # ---------------------------
-def run_day1(warehouse, products, agents, orders):
+def run_day1(warehouse, products, team, orders):
     print("\n=== JOUR 1 : Allocation naïve (sans contraintes) ===")
 
-    result = allocate_first_fit_day1(orders, agents, products)
+    result = allocate_first_fit_day1(orders, team, products)
 
     print("\n== Allocation (First-Fit) ==")
-    for agent in agents:
+    for agent in team.agents.values():
         oids = result.assignments[agent.id]
         print(f"- {agent.id} ({agent.type}): {len(oids)} commande(s) -> {oids}")
 
@@ -32,7 +33,7 @@ def run_day1(warehouse, products, agents, orders):
     print(f"Distance estimée (aller-retour) : {dist_round_trip}")
 
     print("\nUtilisation par agent (poids/volume total des commandes assignées) :")
-    for agent in agents:
+    for agent in team.agents.values():
         total_w = 0.0
         total_v = 0.0
         for oid in result.assignments[agent.id]:
@@ -101,10 +102,18 @@ def main():
     base_dir = Path(__file__).resolve().parent
     data_dir = base_dir / "data"
 
-    warehouse = load_warehouse(data_dir / "warehouse.json")
-    products = load_products(data_dir / "products.json")
-    agents = load_agents(data_dir / "agents.json")
-    orders = load_orders(data_dir / "orders.json")
+    warehouse_json = load_json(data_dir / "warehouse.json")
+    products = load_json(data_dir / "products.json")
+    agents = load_json(data_dir / "agents.json")
+    orders = load_json(data_dir / "orders.json")
+    team = Team(agents)
+    warehouse = Warehouse(
+        width=warehouse_json['dimensions']['width'],
+        height=warehouse_json['dimensions']['height'],
+        zones=warehouse_json['zones'],
+        entry_point=Location(warehouse_json['entry_point']['x'], warehouse_json['entry_point']['y'])
+    )  
+    orders = [Order(**o) for o in orders]
 
     print("Warehouse:", warehouse.width, "x", warehouse.height, "| entry=", warehouse.entry_point)
     print("Products:", len(products), "| Agents:", len(agents), "| Orders:", len(orders))
@@ -114,8 +123,8 @@ def main():
     print("Comparaison : Jour 1 vs Jour 2")
     print("==============================")
 
-    run_day1(warehouse, products, agents, orders)
-    run_day2(warehouse, products, agents, orders)
+    run_day1(warehouse, products, team, orders)
+    run_day2(warehouse, products, team.agents.values(), orders)
 
 
 if __name__ == "__main__":

@@ -2,7 +2,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Dict, List, Tuple, Optional
 
-from .models import Agent, Order, Product, Warehouse
+from .models import Agent, Order, Product, Team, Warehouse
 from .utils import manhattan
 from .constraints import (
     check_capacity,
@@ -35,10 +35,10 @@ def compute_order_totals(order: Order, products: Dict[str, Product]) -> Tuple[fl
 # -------------------------------------------------
 def allocate_first_fit_day1(
     orders: List[Order],
-    agents: List[Agent],
+    team: Team,
     products: Dict[str, Product],
 ) -> AllocationResult:
-    assignments: Dict[str, List[str]] = {a.id: [] for a in agents}
+    assignments: Dict[str, List[str]] = {a.id: [] for a in team.agents.values()}
     unassigned: List[str] = []
     order_totals: Dict[str, Tuple[float, float]] = {}
     cart_human: Dict[str, str] = {}
@@ -48,7 +48,7 @@ def allocate_first_fit_day1(
         order_totals[order.id] = (w, v)
 
         placed = False
-        for agent in agents:
+        for agent in team.agents.values():
             if w <= agent.capacity_weight and v <= agent.capacity_volume:
                 assignments[agent.id].append(order.id)
                 placed = True
