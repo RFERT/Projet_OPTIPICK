@@ -65,40 +65,21 @@ class Product:
 
 
 class Agent:
-    # id: str
-    # type: str  # "robot" | "human" | "cart"
-
-    def __init__(self, type, id):
-        if type == "robot":
-            self.restrictions = {"Zone" : "C", "fragile" : True, "weight" : 10, "agent" : None}
-            self.capacity_weight, self.capacity_volume = 20, 30
-            self.speed = 2.0
-            self.cost_per_hour = 5
-            self.id = id
-        elif type == "human":
-            self.restrictions = {"Zone" : None, "fragile" : None, "weight" : None, "agent" : None}
-            self.capacity_weight, self.capacity_volume = 35, 50
-            self.speed = 1.5
-            self.cost_per_hour = 25
-            self.id = id
-        elif type == "cart":
-            self.restrictions = {"Zone" : None, "fragile" : None, "weight" : None, "agent" : "human"}
-            self.capacity_weight, self.capacity_volume = 50, 80
-            self.speed = 1.2
-            self.cost_per_hour = 3
-            self.id = id
-        else:
-            raise TypeError
+    def __init__(self, type, id, capacity_weight, capacity_volume, speed, cost_per_hour, restrictions):
+        self.type = type
+        self.id = id
+        self.capacity_weight = capacity_weight
+        self.capacity_volume = capacity_volume
+        self.speed = speed
+        self.cost_per_hour = cost_per_hour
+        self.restrictions = restrictions
 
 
 class Team:
-    def __init__(self):
-        self.limits = {"robot" : 3, "human" : 2, "cart" : 2}
+    def __init__(self, agents: list[dict]):
 
-        self.agents = {"R1": Agent("robot", "R1"), "R2": Agent("robot", "R2"), "R3": Agent("robot", "R3"),
-                       "H1": Agent("human", "H1"), "H2": Agent("human", "H2"),
-                        "C1": Agent("cart", "C1"), "C2": Agent("cart", "C2")}
-    
+        self.agents = {agent['id'] : Agent(agent['id'], agent['type'], agent['capacity_weight'], agent['capacity_volume'], agent['speed'], agent['cost_per_hour'], agent['restrictions']) for agent in agents}
+
     def __str__(self):
         return ", ".join(self.agents.keys())
 
