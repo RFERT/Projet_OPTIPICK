@@ -5,10 +5,7 @@ from src.loader import load_json
 from src.models import Agent, Order, OrderItem, Product, Team, Warehouse
 from src.models import Location
 from src.utils import manhattan
-
-
-# ---------------------------
-# Jour 1 (naïf)
+from src.routing import extract_unique_locations
 # ---------------------------
 def run_day1(warehouse, products, team, orders):
     print("\n=== JOUR 1 : Allocation naïve (sans contraintes) ===")
@@ -123,7 +120,7 @@ def main():
         for p in products_list
     }
     
-    team = Team()
+    team = Team(agents)
     warehouse = Warehouse(
         width=warehouse_json['dimensions']['width'],
         height=warehouse_json['dimensions']['height'],
@@ -152,6 +149,54 @@ def main():
 
     run_day1(warehouse, products, team, orders)
     run_day2(warehouse, products, team.agents.values(), orders)
+    
+    # Jour 3 - Étape 1: Extraction des emplacements uniques
+    run_day3_step1(warehouse, products, team, orders)
+
+
+# ---------------------------
+# Jour 3 - Étape 1 : Extraction des emplacements uniques
+# ---------------------------
+def run_day3_step1(warehouse, products, team, orders):
+    """
+    JOUR 3 - ÉTAPE 1 : Extraire les emplacements uniques pour chaque agent.
+    
+    """
+    print("\n=== JOUR 3 - ÉTAPE 1 : Extraction des emplacements uniques ===\n")
+    
+    # D'abord, allocate les commandes aux agents (comme Jour 2)
+    from src.allocation import allocate_first_fit_day2
+    result = allocate_first_fit_day2(orders, list(team.agents.values()), products, warehouse)
+    
+    # Pour chaque agent, extraire les emplacements uniques
+    for agent in team.agents.values():
+        # Récupérer les IDs des commandes assignées à cet agent
+        order_ids = result.assignments[agent.id]
+        
+        # Récupérer tous les produits de ces commandes
+        agent_products = []
+        for order_id in order_ids:
+            # Trouver la commande
+            order = next((o for o in orders if o.id == order_id), None)
+            if order:
+                # Pour chaque item de la commande
+                for item in order.items:
+                    # Ajouter le produit
+                    if item.product_id in products:
+                        agent_products.append(products[item.product_id])
+        
+        # Extraire les emplacements uniques avec notre fonction
+        unique_locations = extract_unique_locations(agent_products)
+        
+        # Afficher les résultats
+        print(f" Agent: {agent.id} (Type: {agent.type})")
+        print(f"   - Commandes assignées: {order_ids}")
+        print(f"   - Nombre de produits: {len(agent_products)}")
+        print(f"   - Emplacements uniques: {len(unique_locations)}")
+        print(f"   - Localisation des emplacements:")
+        for loc in sorted(unique_locations, key=lambda l: (l.x, l.y)):
+            print(f"      • Position ({loc.x}, {loc.y})")
+        print()
 
 
 if __name__ == "__main__":
