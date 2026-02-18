@@ -23,3 +23,17 @@ def extract_unique_locations(products: List[Product]) -> Set[Location]:
         unique_locations.add(product.location)
     
     return unique_locations
+
+
+def build_nodes_with_entry(entry_point: Location, 
+                           unique_locations: Set[Location]) -> List[Location]:
+    """
+    Ajoute l'entrée au début ET à la fin des emplacements uniques.
+    """
+    # Convertir le Set en List pour pouvoir l'ordonner
+    locations_list = list(unique_locations)
+    
+    # Construire le circuit fermé : [Entrée] + [Produits] + [Entrée]
+    nodes = [entry_point] + locations_list + [entry_point]
+    
+    return nodes

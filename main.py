@@ -5,7 +5,7 @@ from src.loader import load_json
 from src.models import Agent, Order, OrderItem, Product, Team, Warehouse
 from src.models import Location
 from src.utils import manhattan
-from src.routing import extract_unique_locations
+from src.routing import extract_unique_locations, build_nodes_with_entry
 # ---------------------------
 def run_day1(warehouse, products, team, orders):
     print("\n=== JOUR 1 : Allocation naïve (sans contraintes) ===")
@@ -150,8 +150,11 @@ def main():
     run_day1(warehouse, products, team, orders)
     run_day2(warehouse, products, team.agents.values(), orders)
     
-    # Jour 3 - Étape 1: Extraction des emplacements uniques
+    # Jour 3 - Étape : Extraction des emplacements uniques
     run_day3_step1(warehouse, products, team, orders)
+    
+    # Jour 3 - Étape : Ajouter l'entrée (point de départ et retour)
+    run_day3_step2(warehouse, products, team, orders)
 
 
 # ---------------------------
@@ -196,6 +199,66 @@ def run_day3_step1(warehouse, products, team, orders):
         print(f"   - Localisation des emplacements:")
         for loc in sorted(unique_locations, key=lambda l: (l.x, l.y)):
             print(f"      • Position ({loc.x}, {loc.y})")
+        print()
+
+
+# ---------------------------
+# Jour 3 - Étape  : Ajouter l'entrée (point de départ et retour)
+# ---------------------------
+def run_day3_step2(warehouse, products, team, orders):
+    """
+    JOUR 3 - ÉTAPE  : Ajouter l'entrée au début ET à la fin des emplacements.
+    
+    Objectif: Transformer les emplacements uniques en un CIRCUIT FERMÉ.
+    
+    Cela signifie que chaque agent PART de l'entrée et DOIT Y RETOURNER.
+    """
+    print("\n=== JOUR 3 - ÉTAPE  : Ajouter l'entrée (point de départ et retour) ===\n")
+    
+    # D'abord, allocate les commandes aux agents (comme Jour 2)
+    from src.allocation import allocate_first_fit_day2
+    result = allocate_first_fit_day2(orders, list(team.agents.values()), products, warehouse)
+    
+    # Pour chaque agent, construire la liste des nœuds TSP
+    for agent in team.agents.values():
+        # Récupérer les IDs des commandes assignées à cet agent
+        order_ids = result.assignments[agent.id]
+        
+        # Si l'agent n'a rien à faire, passer
+        if not order_ids:
+            print(f"  Agent {agent.id}: Aucune commande (pas de tournée)")
+            continue
+        
+        # Récupérer tous les produits de ces commandes
+        agent_products = []
+        for order_id in order_ids:
+            order = next((o for o in orders if o.id == order_id), None)
+            if order:
+                for item in order.items:
+                    if item.product_id in products:
+                        agent_products.append(products[item.product_id])
+        
+        # ÉTAPE  : Extraire les emplacements uniques
+        unique_locations = extract_unique_locations(agent_products)
+        
+        # ÉTAPE  : Ajouter l'entrée au début ET à la fin
+        nodes = build_nodes_with_entry(warehouse.entry_point, unique_locations)
+        
+        # Afficher les résultats
+        print(f" Agent: {agent.id} (Type: {agent.type})")
+        print(f"   ├─ Étape  (extraction) : {len(unique_locations)} emplacements uniques")
+        print(f"   └─ Étape  (circuit) : {len(nodes)} nœuds TSP (avec entrée début + fin)")
+        print(f"\n     Séquence de nœuds pour le TSP :")
+        
+        for i, node in enumerate(nodes):
+            if i == 0:
+                print(f"       [{i}]  DÉPART (Entrée)  : {node}")
+            elif i == len(nodes) - 1:
+                print(f"       [{i}]  RETOUR (Entrée)  : {node}")
+            else:
+                # Trouver quel produit est à ce nœud
+                print(f"       [{i}]  Emplacement      : {node}")
+        
         print()
 
 
