@@ -75,18 +75,21 @@ class Agent:
             self.speed = 2.0
             self.cost_per_hour = 5
             self.id = id
+            self.type = type
         elif type == "human":
             self.restrictions = {"Zone" : None, "fragile" : None, "weight" : None, "agent" : None}
             self.capacity_weight, self.capacity_volume = 35, 50
             self.speed = 1.5
             self.cost_per_hour = 25
             self.id = id
+            self.type = type
         elif type == "cart":
             self.restrictions = {"Zone" : None, "fragile" : None, "weight" : None, "agent" : "human"}
             self.capacity_weight, self.capacity_volume = 50, 80
             self.speed = 1.2
             self.cost_per_hour = 3
             self.id = id
+            self.type = type
         else:
             raise TypeError
 
@@ -104,7 +107,7 @@ class Team:
 
 
 class OrderItem:
-    def __init__(self, product_id: str, quantity: int, zone: str):
+    def __init__(self, product_id: str, quantity: int, zone: str = None):
         self.product_id = product_id
         self.quantity = quantity
         self.zone = zone

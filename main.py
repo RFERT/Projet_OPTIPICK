@@ -2,7 +2,7 @@ from pathlib import Path
 
 from src.allocation import allocate_first_fit_day1, allocate_first_fit_day2, estimate_total_distance
 from src.loader import load_json
-from src.models import Agent, Order, Product, Team, Warehouse
+from src.models import Agent, Order, OrderItem, Product, Team, Warehouse
 from src.models import Location
 from src.utils import manhattan
 
@@ -103,17 +103,44 @@ def main():
     data_dir = base_dir / "data"
 
     warehouse_json = load_json(data_dir / "warehouse.json")
-    products = load_json(data_dir / "products.json")
+    products_list = load_json(data_dir / "products.json")
     agents = load_json(data_dir / "agents.json")
     orders = load_json(data_dir / "orders.json")
-    team = Team(agents)
+    
+    # Convert products list to dictionary with Product objects
+    products = {
+        p['id']: Product(
+            id=p['id'],
+            name=p['name'],
+            category=p['category'],
+            weight=p['weight'],
+            volume=p['volume'],
+            location=Location(p['location'][0], p['location'][1]),
+            frequency=p['frequency'],
+            fragile=p['fragile'],
+            incompatible_with=p.get('incompatible_with', [])
+        )
+        for p in products_list
+    }
+    
+    team = Team()
     warehouse = Warehouse(
         width=warehouse_json['dimensions']['width'],
         height=warehouse_json['dimensions']['height'],
         zones=warehouse_json['zones'],
-        entry_point=Location(warehouse_json['entry_point']['x'], warehouse_json['entry_point']['y'])
+        entry_point=Location(warehouse_json['entry_point'][0], warehouse_json['entry_point'][1])
     )  
-    orders = [Order(**o) for o in orders]
+    # Convert order dictionaries and item dictionaries to Order and OrderItem objects
+    orders = [
+        Order(
+            id=o['id'],
+            received_time=o['received_time'],
+            deadline=o['deadline'],
+            priority=o['priority'],
+            items=[OrderItem(product_id=item['product_id'], quantity=item['quantity'], zone=None) for item in o['items']]
+        )
+        for o in orders
+    ]
 
     print("Warehouse:", warehouse.width, "x", warehouse.height, "| entry=", warehouse.entry_point)
     print("Products:", len(products), "| Agents:", len(agents), "| Orders:", len(orders))
