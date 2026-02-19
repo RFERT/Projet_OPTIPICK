@@ -22,18 +22,56 @@ def allocate_first_fit_day1(orders: List[Order], agents: List[Agent], products: 
                             ) -> AllocationResult:
     assignments: Dict[str, List[str]] = {a.id: [] for a in agents}
     unassigned: List[str] = []
-    order_totals: Dict[str, Tuple[float, float]] = {}       # id : [poids, volume]
-    cart_human: Dict[str, str] = {}
+    order_totals: Dict[str, Tuple[float, float]] = {}
+    cart_human: Dict[str, str] = {}  # cart_id -> human_id (association)
+
+    # Séparer les types d'agents (plus simple en vrai)
+    robots = [a for a in agents if a.type == "robot"]
+    humans = [a for a in agents if a.type == "human"]
+    carts = [a for a in agents if a.type == "cart"]
+    
+    # Noter quels humains sont déjà assignés à un chariot
+    humans_used_with_cart: set = set()
 
     for order in orders:
         order_totals[order.id] = compute_order_totals(order, products)
-
         placed = False
-        for agent in agents:
+
+        # Robot
+        for agent in robots:
             if order_totals[order.id][0] <= agent.capacity_weight and order_totals[order.id][1] <= agent.capacity_volume:
                 assignments[agent.id].append(order.id)
                 placed = True
                 break
+        if placed:
+            continue
+        
+        # Chariot + humain
+        if not placed and order_totals[order.id][0] > human.capacity_weight and order_totals[order.id][1] > human.capacity_volume:      #privilégie un humain seul si possible (moins cher et plus rapide)
+            for cart in carts:
+                # Trouver un humain qui n'est pas encore assigné à ce chariot
+                for human in humans:
+                    if human.id not in humans_used_with_cart:
+                        # Vérifier la capacité du chariot (pas de restriction du humain)
+                        if order_totals[order.id][0] <= cart.capacity_weight and order_totals[order.id][1] <= cart.capacity_volume:
+                            # Assigner les deux
+                            assignments[cart.id].append(order.id)
+                            assignments[human.id].append(order.id)  # L'humain accompagne
+                            cart_human[cart.id] = human.id
+                            humans_used_with_cart.add(human.id)
+                            placed = True
+                            break
+                if placed:
+                    break
+        
+        # Humain seul
+        if not placed:
+            for human in humans:
+                if human.id not in humans_used_with_cart:  # Pas déjà avec un chariot
+                    if order_totals[order.id][0] <= human.capacity_weight and order_totals[order.id][1] <= human.capacity_volume:
+                        assignments[human.id].append(order.id)
+                        placed = True
+                        break
 
         if not placed:
             unassigned.append(order.id)
