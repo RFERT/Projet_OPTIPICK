@@ -1,8 +1,8 @@
 from __future__ import annotations
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Dict, List, Tuple, Optional
 
-from .models import Agent, Order, Product, Team, Warehouse
+from .models import Agent, Order, Product, Team, Warehouse, Location
 from .utils import manhattan
 from .constraints import (
     check_capacity,
@@ -18,6 +18,7 @@ class AllocationResult:
     unassigned: List[str]
     order_totals: Dict[str, Tuple[float, float]]
     cart_human: Dict[str, str]  # cart_id -> human_id
+    routes: Dict[str, Dict] = field(default_factory=dict)  # agent_id -> {'route': [...], 'distance': ...}
 
 
 def compute_order_totals(order: Order, products: Dict[str, Product]) -> Tuple[float, float]:
@@ -143,6 +144,46 @@ def estimate_total_distance(
             total += manhattan(warehouse.entry_point, p.location) * it.quantity * factor
 
     return total
+
+
+# -------------------------------------------------
+# Optimisation TSP des itinéraires
+# -------------------------------------------------
+def optimize_allocation_routes(
+    allocation_result: AllocationResult,
+    orders: List[Order],
+    products: Dict[str, Product],
+    warehouse: Warehouse,
+) -> AllocationResult:
+    """
+    Ajoute les itinéraires optimisés (TSP) aux résultats d'allocation.
+    
+    Args:
+        allocation_result: Résultats d'allocation (assignments)
+        orders: Liste de toutes les commandes
+        products: Dictionnaire des produits
+        warehouse: Entrepôt (pour le point d'entrée)
+    
+    Returns:
+        AllocationResult enrichi avec les routes optimisées
+    """
+    from .routing import optimize_team_routes
+    
+    # Créer un dictionnaire des commandes
+    orders_dict = {o.id: o for o in orders}
+    
+    # Optimiser les routes pour chaque agent
+    routes = optimize_team_routes(
+        allocation_result.assignments,
+        orders,
+        products,
+        warehouse.entry_point
+    )
+    
+    # Ajouter les routes au résultat
+    allocation_result.routes = routes
+    
+    return allocation_result
 
 
 

@@ -1,10 +1,11 @@
 from pathlib import Path
 
-from src.allocation import allocate_first_fit_day1, allocate_first_fit_day2, estimate_total_distance
+from src.allocation import allocate_first_fit_day1, allocate_first_fit_day2, estimate_total_distance, optimize_allocation_routes
 from src.loader import load_json
 from src.models import Agent, Order, OrderItem, Product, Team, Warehouse
 from src.models import Location
 from src.utils import manhattan
+from src.routing import nearest_neighbor_tsp, calculate_route_distance
 
 
 # ---------------------------
@@ -14,6 +15,9 @@ def run_day1(warehouse, products, team, orders):
     print("\n=== JOUR 1 : Allocation naïve (sans contraintes) ===")
 
     result = allocate_first_fit_day1(orders, team, products)
+    
+    # Optimiser les itinéraires (TSP) avec l'heuristique du Plus Proche Voisin
+    result = optimize_allocation_routes(result, orders, products, warehouse)
 
     print("\n== Allocation (First-Fit) ==")
     for agent in team.agents.values():
@@ -31,6 +35,14 @@ def run_day1(warehouse, products, team, orders):
     print(f"Nombre de commandes assignées : {assigned_count}/{len(orders)}")
     print(f"Distance estimée (aller simple) : {dist_one_way}")
     print(f"Distance estimée (aller-retour) : {dist_round_trip}")
+
+    print("\nOptimisation TSP par agent (Plus Proche Voisin) :")
+    for agent in team.agents.values():
+        if agent.id in result.routes:
+            route_info = result.routes[agent.id]
+            route_distance = route_info['distance']
+            route_length = len(route_info['route'])
+            print(f"- {agent.id}: Distance TSP = {route_distance}, Emplacements visités = {route_length - 2}")
 
     print("\nUtilisation par agent (poids/volume total des commandes assignées) :")
     for agent in team.agents.values():
@@ -55,6 +67,9 @@ def run_day2(warehouse, products, agents, orders):
     print("\n=== JOUR 2 : Contraintes activées ===")
 
     result = allocate_first_fit_day2(orders, agents, products, warehouse)
+    
+    # Optimiser les itinéraires (TSP) avec l'heuristique du Plus Proche Voisin
+    result = optimize_allocation_routes(result, orders, products, warehouse)
 
     print("\n== Allocation (First-Fit + contraintes) ==")
     for agent in agents:
@@ -79,6 +94,14 @@ def run_day2(warehouse, products, agents, orders):
     print(f"Distance estimée (aller simple) : {dist_one_way}")
     print(f"Distance estimée (aller-retour) : {dist_round_trip}")
 
+    print("\nOptimisation TSP par agent (Plus Proche Voisin) :")
+    for agent in agents:
+        if agent.id in result.routes:
+            route_info = result.routes[agent.id]
+            route_distance = route_info['distance']
+            route_length = len(route_info['route'])
+            print(f"- {agent.id}: Distance TSP = {route_distance}, Emplacements visités = {route_length - 2}")
+
     print("\nUtilisation par agent (poids/volume total des commandes assignées) :")
     for agent in agents:
         total_w = 0.0
@@ -93,6 +116,51 @@ def run_day2(warehouse, products, agents, orders):
             f"poids={total_w:.2f}/{agent.capacity_weight} | "
             f"volume={total_v:.2f}/{agent.capacity_volume}"
         )
+
+
+# ---------------------------
+# Jour 3 (Test TSP)
+# ---------------------------
+def run_day3(warehouse):
+    """
+    Jour 3 : Test complet de l'algorithme TSP (Nearest Neighbor)
+    """
+    print("\n=== JOUR 3 : Test TSP - Plus Proche Voisin ===\n")
+    
+    # Points d'entrée (entrepôt)
+    entry = warehouse.entry_point
+    
+    # Emplacements à visiter (exemple)
+    locations = [
+        Location(2, 1),
+        Location(1, 0),
+        Location(4, 0),
+        Location(3, 4),
+        Location(2, 3),
+    ]
+    
+    print("Entrée de l'entrepôt:", entry)
+    print("Emplacements à visiter:")
+    for i, loc in enumerate(locations):
+        print(f"  {i+1}. {loc}")
+    
+    # Résoudre le TSP
+    route = nearest_neighbor_tsp(locations, entry, manhattan)
+    distance = calculate_route_distance(route, manhattan)
+    
+    print("\n=== Résultats ===")
+    print("Route optimisée:")
+    for i, loc in enumerate(route):
+        if i == 0:
+            print(f"  Départ: {loc}")
+        elif i == len(route) - 1:
+            print(f"  Retour: {loc}")
+        else:
+            print(f"  {i}. {loc}")
+    
+    print(f"\nDistance totale: {distance}")
+    print(f"Nombre de visites: {len(route) - 2} (entrée, sortie non comptées)")
+    print("\n✅ Test TSP - Plus Proche Voisin réussi !")
 
 
 # ---------------------------
@@ -123,7 +191,7 @@ def main():
         for p in products_list
     }
     
-    team = Team()
+    team = Team(agents)
     warehouse = Warehouse(
         width=warehouse_json['dimensions']['width'],
         height=warehouse_json['dimensions']['height'],
@@ -152,6 +220,7 @@ def main():
 
     run_day1(warehouse, products, team, orders)
     run_day2(warehouse, products, team.agents.values(), orders)
+    run_day3(warehouse)
 
 
 if __name__ == "__main__":
