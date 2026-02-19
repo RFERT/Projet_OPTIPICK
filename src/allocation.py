@@ -26,8 +26,10 @@ class AllocationResult:
 def allocate_first_fit_day1(
     orders: List[Order],
     agents: List[Agent],
+    agents: List[Agent],
     products: Dict[str, Product],
 ) -> AllocationResult:
+    assignments: Dict[str, List[str]] = {a.id: [] for a in agents}
     assignments: Dict[str, List[str]] = {a.id: [] for a in agents}
     unassigned: List[str] = []
     order_totals: Dict[str, Tuple[float, float]] = {}
@@ -38,6 +40,7 @@ def allocate_first_fit_day1(
         order_totals[order.id] = (w, v)
 
         placed = False
+        for agent in agents:
         for agent in agents:
             if w <= agent.capacity_weight and v <= agent.capacity_volume:
                 assignments[agent.id].append(order.id)
