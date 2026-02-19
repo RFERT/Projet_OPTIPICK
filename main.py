@@ -43,10 +43,6 @@ def run_day1(warehouse, products, team, orders):
             f"volume={total_v:.2f}/{agent.capacity_volume}"
         )
 
-
-# ---------------------------
-# Jour 2 (contraintes)
-# ---------------------------
 def run_day2(warehouse, products, agents, orders):
     print("\n=== JOUR 2 : Contraintes activées ===")
 
@@ -90,78 +86,6 @@ def run_day2(warehouse, products, agents, orders):
             f"volume={total_v:.2f}/{agent.capacity_volume}"
         )
 
-
-# ---------------------------
-# Main
-# ---------------------------
-def main():
-    base_dir = Path(__file__).resolve().parent
-    data_dir = base_dir / "data"
-
-    warehouse_json = load_json(data_dir / "warehouse.json")
-    products_list = load_json(data_dir / "products.json")
-    agents = load_json(data_dir / "agents.json")
-    orders = load_json(data_dir / "orders.json")
-    
-    # Convert products list to dictionary with Product objects
-    products = {
-        product_dict['id']: Product(
-            id=product_dict['id'],
-            name=product_dict['name'],
-            category=product_dict['category'],
-            weight=product_dict['weight'],
-            volume=product_dict['volume'],
-            location=Location(product_dict['location'][0], product_dict['location'][1]),
-            frequency=product_dict['frequency'],
-            fragile=product_dict['fragile'],
-            incompatible_with=product_dict.get('incompatible_with', [])
-        )
-        for product_dict in products_list
-    }
-    
-    team = Team(agents)
-    warehouse = Warehouse(
-        width=warehouse_json['dimensions']['width'],
-        height=warehouse_json['dimensions']['height'],
-        zones=warehouse_json['zones'],
-        entry_point=Location(warehouse_json['entry_point'][0], warehouse_json['entry_point'][1])
-    )  
-    # Convert order dictionaries and item dictionaries to Order and OrderItem objects
-    orders = [
-        Order(
-            id=order_dict['id'],
-            received_time=order_dict['received_time'],
-            deadline=order_dict['deadline'],
-            priority=order_dict['priority'],
-            items=[OrderItem(product_id=item['product_id'], quantity=item['quantity'], zone=None) for item in order_dict['items']]
-        )
-        for order_dict in orders
-    ]
-
-    print("Warehouse:", warehouse.width, "x", warehouse.height, "| entry=", warehouse.entry_point)
-    print("Products:", len(products), "| Agents:", len(agents), "| Orders:", len(orders))
-    print("Test Manhattan =", manhattan(Location(0, 0), Location(3, 2)))
-
-    print("\n==============================")
-    print("Comparaison : Jour 1 vs Jour 2")
-    print("==============================")
-
-    run_day1(warehouse, products, team, orders)
-    run_day2(warehouse, products, team.agents.values(), orders)
-    
-    # Jour 3 - Étape : Extraction des emplacements uniques
-    run_day3_step1(warehouse, products, team, orders)
-    
-    # Jour 3 - Étape : Ajouter l'entrée (point de départ et retour)
-    run_day3_step2(warehouse, products, team, orders)    
-    # Jour 3 - Étape : Calculer la matrice de distances
-    run_day3_step3(warehouse, products, team, orders)
-    # Jour 3 - Étape 4 : Résolution TSP (Nearest Neighbor)
-    run_day3_step4(warehouse, products, team, orders)
-
-# ---------------------------
-# Jour 3 - Étape  : Extraction des emplacements uniques
-# ---------------------------
 def run_day3_step1(warehouse, products, team, orders):
     """
     JOUR 3 - ÉTAPE 1 : Extraire les emplacements uniques pour chaque agent.
@@ -203,10 +127,6 @@ def run_day3_step1(warehouse, products, team, orders):
             print(f"      • Position ({loc.x}, {loc.y})")
         print()
 
-
-# ---------------------------
-# Jour 3 - Étape  : Ajouter l'entrée (point de départ et retour)
-# ---------------------------
 def run_day3_step2(warehouse, products, team, orders):
     """
     JOUR 3 - ÉTAPE  : Ajouter l'entrée au début ET à la fin des emplacements.
@@ -263,10 +183,6 @@ def run_day3_step2(warehouse, products, team, orders):
         
         print()
 
-
-# ---------------------------
-# Jour 3 - Étape  : Calculer la matrice de distances
-# ---------------------------
 def run_day3_step3(warehouse, products, team, orders):
     """
     JOUR 3 - ÉTAPE : Calculer la matrice de distances Manhattan.
@@ -344,10 +260,6 @@ def run_day3_step3(warehouse, products, team, orders):
         
         print()
 
-
-# ---------------------------
-# Jour 3 - Étape 4 : Résolution TSP (Nearest Neighbor)
-# ---------------------------
 def run_day3_step4(warehouse, products, team, orders):
     """
     JOUR 3 - ÉTAPE 4 : Résoudre le TSP avec l'heuristique du PLUS PROCHE VOISIN.
@@ -420,6 +332,69 @@ def run_day3_step4(warehouse, products, team, orders):
         print(f"   📈 Cette tournée visite {len(unique_locations)} emplacements différents")
         print()
 
+def main():
+    base_dir = Path(__file__).resolve().parent
+    data_dir = base_dir / "data"
+
+    # JSON -> DICT
+    warehouse = load_json(data_dir / "warehouse.json")
+    products = load_json(data_dir / "products.json")
+    agents = load_json(data_dir / "agents.json")
+    print(agents)
+    orders = load_json(data_dir / "orders.json")
+    
+    # DICT(JSON) -> objets python
+    warehouse = Warehouse(
+        width=warehouse['dimensions']['width'],
+        height=warehouse['dimensions']['height'],
+        zones=warehouse['zones'],
+        entry_point=Location(warehouse['entry_point'][0], warehouse['entry_point'][1])    )
+    products = {
+        product_dict['id']: Product(
+            id=product_dict['id'],
+            name=product_dict['name'],
+            category=product_dict['category'],
+            weight=product_dict['weight'],
+            volume=product_dict['volume'],
+            location=Location(product_dict['location'][0], product_dict['location'][1]),
+            frequency=product_dict['frequency'],
+            fragile=product_dict['fragile'],
+            incompatible_with=product_dict.get('incompatible_with', [])
+        )
+        for product_dict in products
+    }
+    team = Team(agents)
+    orders = [
+        Order(
+            id=order_dict['id'],
+            received_time=order_dict['received_time'],
+            deadline=order_dict['deadline'],
+            priority=order_dict['priority'],
+            items=order_dict['items']
+        )
+        for order_dict in orders
+    ]
+
+    # print("Warehouse:", warehouse.width, "x", warehouse.height, "| entry=", warehouse.entry_point)
+    # print("Products:", len(products), "| Agents:", len(agents), "| Orders:", len(orders))
+    # print("Test Manhattan =", manhattan(Location(0, 0), Location(3, 2)))
+
+    # print("\n==============================")
+    # print("Comparaison : Jour 1 vs Jour 2")
+    # print("==============================")
+
+    # run_day1(warehouse, products, team, orders)
+    # run_day2(warehouse, products, team.agents.values(), orders)
+    
+    # # Jour 3 - Étape : Extraction des emplacements uniques
+    # run_day3_step1(warehouse, products, team, orders)
+    
+    # # Jour 3 - Étape : Ajouter l'entrée (point de départ et retour)
+    # run_day3_step2(warehouse, products, team, orders)    
+    # # Jour 3 - Étape : Calculer la matrice de distances
+    # run_day3_step3(warehouse, products, team, orders)
+    # # Jour 3 - Étape 4 : Résolution TSP (Nearest Neighbor)
+    # run_day3_step4(warehouse, products, team, orders)
 
 if __name__ == "__main__":
     main()

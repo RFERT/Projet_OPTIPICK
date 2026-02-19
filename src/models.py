@@ -85,32 +85,33 @@ class Team:
 
 
 class OrderItem:
-    def __init__(self, product_id: str, quantity: int, zone: str = None):
-        self.product_id = product_id
+    def __init__(self, product: Product, quantity: int):
+        self.product = product
         self.quantity = quantity
-        self.zone = zone
+
 
     def __eq__(self, other):
         if isinstance(other, OrderItem):
-            return (self.product_id == other.product_id and 
-                    self.quantity == other.quantity and 
-                    self.zone == other.zone)
+            return (self.product == other.product and 
+                    self.quantity == other.quantity)
         return False
 
     def __hash__(self):
-        return hash((self.product_id, self.quantity, self.zone))
+        return hash((self.product, self.quantity, self.zone))
 
     def __repr__(self):
-        return f"OrderItem(product_id={self.product_id}, quantity={self.quantity}, zone={self.zone})"
+        return f"OrderItem(product_id={self.product}, quantity={self.quantity}"
 
 
 class Order:
-    def __init__(self, id: str, received_time: str, deadline: str, priority: str, items: List[OrderItem]):
+    def __init__(self, id: str, received_time: str, deadline: str, priority: str, items: List[Dict]):
         self.id = id
         self.received_time = received_time
         self.deadline = deadline
         self.priority = priority
-        self.items = items
+        self.items = []
+        for item in items:
+            self.items.append(OrderItem(item['items']))
 
     def __repr__(self):
         return f"Order(id={self.id}, priority={self.priority})"
