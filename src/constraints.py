@@ -52,7 +52,6 @@ def check_incompatibilities(order: Order, products: Dict[str, Product]) -> bool:
     return can_combine(order.items)
 
 
-
 def check_robot_restrictions(order: Order, agent: Agent, products: Dict[str, Product]) -> bool:
     # Les humains et les chariots peuvent tout livrer (pas de restrictions)
     if agent.type != "robot":
@@ -110,3 +109,29 @@ def get_zone_of_location(warehouse, location) -> str | None:
             return zone_code
     
     return None
+
+
+def is_human_available_for_cart(human_id: str, used_with_carts: set) -> bool:
+    return human_id not in used_with_carts
+
+
+def get_available_human_for_cart(humans: List[Agent], used_with_carts: set) -> Agent | None:
+    
+    for human in humans:
+        if is_human_available_for_cart(human.id, used_with_carts):
+            return human
+    
+    # Aucun humain disponible
+    return None
+
+
+def can_pair_cart_human(cart: Agent, human: Agent, order: Order, products: Dict[str, Product]) -> bool:
+    # Vérifier capacité du chariot
+    if not check_capacity(order, cart, products):
+        return False
+    
+    # Vérifier incompatibilités
+    if not check_incompatibilities(order, products):
+        return False
+    
+    return True
