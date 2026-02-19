@@ -29,7 +29,7 @@ def run_day1(warehouse, products, team, orders):
 
     dist_one_way = estimate_total_distance(orders, products, warehouse, round_trip=False)
     dist_round_trip = estimate_total_distance(orders, products, warehouse, round_trip=True)
-    assigned_count = sum(len(v) for v in result.assignments.values())
+    assigned_count = sum(len(assignment_list) for assignment_list in result.assignments.values())
 
     print("\n== Évaluation Jour 1 ==")
     print(f"Nombre de commandes assignées : {assigned_count}/{len(orders)}")
@@ -87,7 +87,7 @@ def run_day2(warehouse, products, agents, orders):
 
     dist_one_way = estimate_total_distance(orders, products, warehouse, round_trip=False)
     dist_round_trip = estimate_total_distance(orders, products, warehouse, round_trip=True)
-    assigned_count = sum(len(v) for v in result.assignments.values())
+    assigned_count = sum(len(assignment_list) for assignment_list in result.assignments.values())
 
     print("\n== Évaluation Jour 2 ==")
     print(f"Nombre de commandes assignées : {assigned_count}/{len(orders)}")
@@ -177,18 +177,18 @@ def main():
     
     # Convert products list to dictionary with Product objects
     products = {
-        p['id']: Product(
-            id=p['id'],
-            name=p['name'],
-            category=p['category'],
-            weight=p['weight'],
-            volume=p['volume'],
-            location=Location(p['location'][0], p['location'][1]),
-            frequency=p['frequency'],
-            fragile=p['fragile'],
-            incompatible_with=p.get('incompatible_with', [])
+        product_dict['id']: Product(
+            id=product_dict['id'],
+            name=product_dict['name'],
+            category=product_dict['category'],
+            weight=product_dict['weight'],
+            volume=product_dict['volume'],
+            location=Location(product_dict['location'][0], product_dict['location'][1]),
+            frequency=product_dict['frequency'],
+            fragile=product_dict['fragile'],
+            incompatible_with=product_dict.get('incompatible_with', [])
         )
-        for p in products_list
+        for product_dict in products_list
     }
     
     team = Team(agents)
@@ -201,13 +201,13 @@ def main():
     # Convert order dictionaries and item dictionaries to Order and OrderItem objects
     orders = [
         Order(
-            id=o['id'],
-            received_time=o['received_time'],
-            deadline=o['deadline'],
-            priority=o['priority'],
-            items=[OrderItem(product_id=item['product_id'], quantity=item['quantity'], zone=None) for item in o['items']]
+            id=order_dict['id'],
+            received_time=order_dict['received_time'],
+            deadline=order_dict['deadline'],
+            priority=order_dict['priority'],
+            items=[OrderItem(product_id=item['product_id'], quantity=item['quantity'], zone=None) for item in order_dict['items']]
         )
-        for o in orders
+        for order_dict in orders
     ]
 
     print("Warehouse:", warehouse.width, "x", warehouse.height, "| entry=", warehouse.entry_point)

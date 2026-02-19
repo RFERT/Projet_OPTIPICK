@@ -1,9 +1,11 @@
 """
 TSP (Traveling Salesman Problem) - Optimisation des itinéraires
 Heuristique : Plus Proche Voisin (Nearest Neighbor)
+
+Jour 3 - Objectif: Optimiser l'ordre de visite des emplacements pour chaque agent
 """
 
-from typing import List, Tuple, Callable
+from typing import List, Tuple, Callable, Set
 from .models import Location, Product, Order
 from .utils import manhattan
 
@@ -142,3 +144,69 @@ def optimize_team_routes(
             routes[agent_id] = {'route': route, 'distance': distance}
     
     return routes
+
+
+# ========== Fonctions Jour 3 - Complémentaires ==========
+
+def extract_unique_locations(products: List[Product]) -> Set[Location]:
+    """
+    Extrait tous les emplacements uniques des produits.
+    
+    Args:
+        products: Liste des produits
+    
+    Returns:
+        Ensemble des emplacements uniques
+    """
+    unique_locations = set()
+    
+    for product in products:
+        unique_locations.add(product.location)
+    
+    return unique_locations
+
+
+def build_nodes_with_entry(entry_point: Location, unique_locations: Set[Location]) -> List[Location]:
+    """
+    Construit la liste des nœuds avec entrée au début et à la fin.
+    
+    Args:
+        entry_point: Point d'entrée de l'entrepôt
+        unique_locations: Ensemble des emplacements à visiter
+    
+    Returns:
+        Liste : [Entrée] + [Produits] + [Entrée]
+    """
+    locations_list = list(unique_locations)
+    
+    # Circuit fermé : [Entrée] + [Produits] + [Entrée]
+    nodes = [entry_point] + locations_list + [entry_point]
+    
+    return nodes
+
+
+def compute_distance_matrix(nodes: List[Location]) -> List[List[int]]:
+    """
+    Calcule la matrice des distances Manhattan entre tous les nœuds.
+    
+    Args:
+        nodes: Liste des nœuds (locations)
+    
+    Returns:
+        Matrice carrée des distances
+    """
+    n = len(nodes)
+    distance_matrix = [[0] * n for _ in range(n)]
+    
+    # Pour chaque nœud de départ
+    for node_from_index in range(n):
+        # Calculer les distances vers les nœuds suivants (optimisation)
+        for node_to_index in range(node_from_index, n):
+            distance = manhattan(nodes[node_from_index], nodes[node_to_index])
+            
+            # Remplir à la fois [from][to] et [to][from] (symétrie)
+            distance_matrix[node_from_index][node_to_index] = distance
+            distance_matrix[node_to_index][node_from_index] = distance
+    
+    return distance_matrix
+
