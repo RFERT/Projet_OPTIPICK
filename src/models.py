@@ -63,6 +63,10 @@ class Product:
     def __repr__(self):
         return f"Product(id={self.id}, name={self.name})"
 
+    def __eq__(self, other):
+        if isinstance(other, Product):
+            return self.id == other.id
+        return False
 
 class Agent:
     def __init__(self, type, id, capacity_weight, capacity_volume, speed, cost_per_hour, restrictions):
@@ -104,14 +108,14 @@ class OrderItem:
 
 
 class Order:
-    def __init__(self, id: str, received_time: str, deadline: str, priority: str, items: List[Dict]):
+    def __init__(self, id: str, received_time: str, deadline: str, priority: str, items: List[Dict], products: Dict[str, Product]):
         self.id = id
         self.received_time = received_time
         self.deadline = deadline
         self.priority = priority
         self.items = []
         for item in items:
-            self.items.append(OrderItem(item['items']))
+            self.items.append(OrderItem(products[item['product_id']], item['quantity']))
 
     def __repr__(self):
         return f"Order(id={self.id}, priority={self.priority})"
