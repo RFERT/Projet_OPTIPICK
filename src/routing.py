@@ -209,4 +209,3 @@ def compute_distance_matrix(nodes: List[Location]) -> List[List[int]]:
             distance_matrix[node_to_index][node_from_index] = distance
     
     return distance_matrix
-
