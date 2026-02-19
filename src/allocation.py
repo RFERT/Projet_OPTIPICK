@@ -202,6 +202,3 @@ def optimize_allocation_routes(
     allocation_result.routes = routes
     
     return allocation_result
-
-
-
