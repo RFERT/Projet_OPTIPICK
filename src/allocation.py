@@ -2,8 +2,8 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Dict, List, Tuple, Optional
 
-from .models import Agent, Order, Product, Team, Warehouse, Location
-from .utils import manhattan
+from .models import *
+from .utils import *
 from .constraints import (
     check_capacity,
     check_incompatibilities,
@@ -20,26 +20,15 @@ class AllocationResult:
     cart_human: Dict[str, str]  # cart_id -> human_id
     routes: Dict[str, Dict] = field(default_factory=dict)  # agent_id -> {'route': [...], 'distance': ...}
 
-
-def compute_order_totals(order: Order, products: Dict[str, Product]) -> Tuple[float, float]:
-    total_w = 0.0
-    total_v = 0.0
-    for it in order.items:
-        p = products[it.product_id]
-        total_w += p.weight * it.quantity
-        total_v += p.volume * it.quantity
-    return total_w, total_v
-
-
 # -------------------------------------------------
 # JOUR 1 — allocation naïve
 # -------------------------------------------------
 def allocate_first_fit_day1(
     orders: List[Order],
-    team: Team,
+    agents: List[Agent],
     products: Dict[str, Product],
 ) -> AllocationResult:
-    assignments: Dict[str, List[str]] = {a.id: [] for a in team.agents.values()}
+    assignments: Dict[str, List[str]] = {a.id: [] for a in agents}
     unassigned: List[str] = []
     order_totals: Dict[str, Tuple[float, float]] = {}
     cart_human: Dict[str, str] = {}
@@ -49,7 +38,7 @@ def allocate_first_fit_day1(
         order_totals[order.id] = (w, v)
 
         placed = False
-        for agent in team.agents.values():
+        for agent in agents:
             if w <= agent.capacity_weight and v <= agent.capacity_volume:
                 assignments[agent.id].append(order.id)
                 placed = True

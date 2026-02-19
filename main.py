@@ -1,8 +1,7 @@
 from pathlib import Path
 from src.allocation import allocate_first_fit_day1, allocate_first_fit_day2, estimate_total_distance, optimize_allocation_routes
 from src.loader import load_json
-from src.models import Agent, Order, OrderItem, Product, Team, Warehouse
-from src.models import Location
+from src.models import * 
 from src.utils import *
 from src.routing import extract_unique_locations, build_nodes_with_entry, compute_distance_matrix, nearest_neighbor_tsp, calculate_route_distance
 # ---------------------------
@@ -340,11 +339,11 @@ def main():
     warehouse = load_json(data_dir / "warehouse.json")
     products = load_json(data_dir / "products.json")
     agents = load_json(data_dir / "agents.json")
-    print(agents)
     orders = load_json(data_dir / "orders.json")
     
     # DICT(JSON) -> objets python
-    JSON_to_py()
+    warehouse, products, agents, orders = JSON_to_py(warehouse, products, agents, orders)
+    print(warehouse)
     warehouse.show()
     # print("Warehouse:", warehouse.width, "x", warehouse.height, "| entry=", warehouse.entry_point)
     # print("Products:", len(products), "| Agents:", len(agents), "| Orders:", len(orders))
