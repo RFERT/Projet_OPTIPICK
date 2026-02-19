@@ -1,5 +1,4 @@
 from pathlib import Path
-
 from src.allocation import allocate_first_fit_day1, allocate_first_fit_day2, estimate_total_distance, optimize_allocation_routes
 from src.loader import load_json
 from src.models import Agent, Order, OrderItem, Product, Team, Warehouse

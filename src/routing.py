@@ -1,14 +1,6 @@
-"""
-TSP (Traveling Salesman Problem) - Optimisation des itinéraires
-Heuristique : Plus Proche Voisin (Nearest Neighbor)
-
-Jour 3 - Objectif: Optimiser l'ordre de visite des emplacements pour chaque agent
-"""
-
 from typing import List, Tuple, Callable, Set
 from .models import Location, Product, Order
 from .utils import manhattan
-
 
 def nearest_neighbor_tsp(
     locations: List[Location],
