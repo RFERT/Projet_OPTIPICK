@@ -3,7 +3,7 @@ from src.allocation import allocate_first_fit_day1, allocate_first_fit_day2, est
 from src.loader import load_json
 from src.models import Agent, Order, OrderItem, Product, Team, Warehouse
 from src.models import Location
-from src.utils import manhattan
+from src.utils import *
 from src.routing import extract_unique_locations, build_nodes_with_entry, compute_distance_matrix, nearest_neighbor_tsp, calculate_route_distance
 # ---------------------------
 def run_day1(warehouse, products, team, orders):
@@ -344,36 +344,7 @@ def main():
     orders = load_json(data_dir / "orders.json")
     
     # DICT(JSON) -> objets python
-    warehouse = Warehouse(
-        width=warehouse['dimensions']['width'],
-        height=warehouse['dimensions']['height'],
-        zones=warehouse['zones'],
-        entry_point=Location(warehouse['entry_point'][0], warehouse['entry_point'][1])    )
-    products = {
-        product_dict['id']: Product(
-            id=product_dict['id'],
-            name=product_dict['name'],
-            category=product_dict['category'],
-            weight=product_dict['weight'],
-            volume=product_dict['volume'],
-            location=Location(product_dict['location'][0], product_dict['location'][1]),
-            frequency=product_dict['frequency'],
-            fragile=product_dict['fragile'],
-            incompatible_with=product_dict.get('incompatible_with', [])
-        )
-        for product_dict in products
-    }
-    team = Team(agents)
-    orders = [
-        Order(
-            id=order_dict['id'],
-            received_time=order_dict['received_time'],
-            deadline=order_dict['deadline'],
-            priority=order_dict['priority'],
-            items=order_dict['items']
-        )
-        for order_dict in orders
-    ]
+    JSON_to_py()
     warehouse.show()
     # print("Warehouse:", warehouse.width, "x", warehouse.height, "| entry=", warehouse.entry_point)
     # print("Products:", len(products), "| Agents:", len(agents), "| Orders:", len(orders))
