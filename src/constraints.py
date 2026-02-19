@@ -50,3 +50,63 @@ def can_combine(order_items: List) -> bool:
 
 def check_incompatibilities(order: Order, products: Dict[str, Product]) -> bool:
     return can_combine(order.items)
+
+
+
+def check_robot_restrictions(order: Order, agent: Agent, products: Dict[str, Product]) -> bool:
+    # Les humains et les chariots peuvent tout livrer (pas de restrictions)
+    if agent.type != "robot":
+        return True
+    
+    # Récupérer les restrictions du robot
+    restrictions = agent.restrictions
+    
+    # Récupérer les limites spécifiques du robot
+    has_no_fragile_restriction = restrictions.get("no_fragile", False)
+    max_item_weight = restrictions.get("max_item_weight", float('inf'))
+    
+    # Vérifier chaque produit de la commande par rapport aux restrictions du robot
+    for order_item in order.items:
+        product = order_item.product
+        
+        if has_no_fragile_restriction and product.fragile:
+            return False
+        
+        if product.weight > max_item_weight:
+            return False
+    
+    # Aucune restriction violée
+    return True
+
+
+def check_no_zones(order: Order, agent: Agent, products: Dict[str, Product], warehouse) -> bool:
+    # Récupérer les zones interdites pour cet agent
+    no_zones = agent.restrictions.get("no_zones", [])
+    
+    if not no_zones:
+        return True
+    
+    # Vérifier que AUCUN produit n'est dans une zone interdite
+    for order_item in order.items:
+        product = order_item.product
+        
+        zone = get_zone_of_location(warehouse, product.location)
+        
+        if zone and zone in no_zones:
+            return False
+    
+    return True
+
+
+def get_zone_of_location(warehouse, location) -> str | None:
+
+    if not warehouse or not hasattr(warehouse, 'zones'):
+        return None
+    
+    for zone_code, zone_info in warehouse.zones.items():
+        coords = zone_info.get("coords", [])
+        # Vérifier si [location.x, location.y] est dans cette zone
+        if [location.x, location.y] in coords:
+            return zone_code
+    
+    return None
