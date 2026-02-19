@@ -22,13 +22,19 @@ class Location:
 
 
 class Warehouse:
-    def __init__(self, width: int, height: int, zones: Dict[str, Dict], entry_point: Location):
-        self.grid = np.array([np.zeros(width)for row in range(height)])
+    def __init__(self, width: int, height: int, zones: Dict[str, Dict], entry_point: Location, aisles: list[list[int]]):
         self.width: int = width
         self.height: int = height
         self.zones: Dict[str, Dict] = zones          # brut (jour 1)
         self.entry_point: Location = entry_point
 
+        self.grid = np.array([[""for column in range(width)]for row in range(height)])
+        for zone_name, zone_data in zones.items():
+            for coord in zone_data["coords"]:
+                self.grid[coord[1]][coord[0]] = zone_name
+        self.grid[entry_point.y][entry_point.x] = "1"
+        for coord in aisles:
+            self.grid[coord[1]][coord[0]] = "0"
     def show(self):
         color_map = {
         'A': 0,  # Bleu - electronique
@@ -37,7 +43,8 @@ class Warehouse:
         'D': 3,  # Rouge - Chimie
         'E': 4,  # Orange - Textile
         '0': 5,  # Blanc - Allee
-        '1': 6   # Violet - Entree
+        '1': 6,   # Violet - Entree
+        '': 7   # Gris - Erreur (non défini)
         }
 
         warehouse_colors = [[color_map[cell] for cell in row] for row in self.grid]
@@ -78,16 +85,6 @@ class Agent:
         self.cost_per_hour = cost_per_hour
         self.restrictions = restrictions
 
-
-class Team:
-    def __init__(self, agents: list[dict]):
-
-        self.agents = {agent['id'] : Agent(agent['id'], agent['type'], agent['capacity_weight'], agent['capacity_volume'], agent['speed'], agent['cost_per_hour'], agent['restrictions']) for agent in agents}
-
-    def __str__(self):
-        return ", ".join(self.agents.keys())
-
-
 class OrderItem:
     def __init__(self, product: Product, quantity: int):
         self.product = product
@@ -101,10 +98,10 @@ class OrderItem:
         return False
 
     def __hash__(self):
-        return hash((self.product, self.quantity, self.zone))
+        return hash((self.product, self.quantity))
 
     def __repr__(self):
-        return f"OrderItem(product_id={self.product}, quantity={self.quantity}"
+        return f"OrderItem(product_id={self.product}, quantity={self.quantity})"
 
 
 class Order:
