@@ -1,4 +1,5 @@
 from src.models import *
+from typing import Tuple
 
 def compute_order_totals(order: Order, products: Dict[str, Product]) -> Tuple[float, float]:
     total_w = 0.0

@@ -4,12 +4,10 @@ from typing import Dict, List, Tuple, Optional
 
 from .models import *
 from .utils import *
-from .constraints import (
-    check_capacity,
+from .constraints import (check_capacity,
     check_incompatibilities,
     check_robot_restrictions,
-    check_no_zones,
-)
+    check_no_zones)
 
 
 @dataclass
@@ -20,27 +18,19 @@ class AllocationResult:
     cart_human: Dict[str, str]  # cart_id -> human_id
     routes: Dict[str, Dict] = field(default_factory=dict)  # agent_id -> {'route': [...], 'distance': ...}
 
-# -------------------------------------------------
-# JOUR 1 — allocation naïve
-# -------------------------------------------------
-def allocate_first_fit_day1(
-    orders: List[Order],
-    agents: List[Agent],
-    products: Dict[str, Product],
-) -> AllocationResult:
-    assignments: Dict[str, List[str]] = {a.id: [] for a in agents}
+def allocate_first_fit_day1(orders: List[Order], agents: List[Agent], products: Dict[str, Product]
+                            ) -> AllocationResult:
     assignments: Dict[str, List[str]] = {a.id: [] for a in agents}
     unassigned: List[str] = []
-    order_totals: Dict[str, Tuple[float, float]] = {}
+    order_totals: Dict[str, Tuple[float, float]] = {}       # id : [poids, volume]
     cart_human: Dict[str, str] = {}
 
     for order in orders:
-        w, v = compute_order_totals(order, products)
-        order_totals[order.id] = (w, v)
+        order_totals[order.id] = compute_order_totals(order, products)
 
         placed = False
         for agent in agents:
-            if w <= agent.capacity_weight and v <= agent.capacity_volume:
+            if order_totals[order.id][0] <= agent.capacity_weight and order_totals[order.id][1] <= agent.capacity_volume:
                 assignments[agent.id].append(order.id)
                 placed = True
                 break
