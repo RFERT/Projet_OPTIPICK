@@ -374,7 +374,7 @@ def main():
         )
         for order_dict in orders
     ]
-
+    warehouse.show()
     # print("Warehouse:", warehouse.width, "x", warehouse.height, "| entry=", warehouse.entry_point)
     # print("Products:", len(products), "| Agents:", len(agents), "| Orders:", len(orders))
     # print("Test Manhattan =", manhattan(Location(0, 0), Location(3, 2)))
