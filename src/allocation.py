@@ -1,15 +1,15 @@
 from __future__ import annotations
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Dict, List, Tuple, Optional
+import pdb
+from itertools import cycle
 
-from .models import Agent, Order, Product, Warehouse
-from .utils import manhattan
-from .constraints import (
-    check_capacity,
+from .models import *
+from .utils import *
+from .constraints import (check_capacity,
     check_incompatibilities,
     check_robot_restrictions,
-    check_no_zones,
-)
+    check_no_zones)
 
 
 @dataclass
@@ -18,41 +18,68 @@ class AllocationResult:
     unassigned: List[str]
     order_totals: Dict[str, Tuple[float, float]]
     cart_human: Dict[str, str]  # cart_id -> human_id
+    routes: Dict[str, Dict] = field(default_factory=dict)  # agent_id -> {'route': [...], 'distance': ...}
 
-
-def compute_order_totals(order: Order, products: Dict[str, Product]) -> Tuple[float, float]:
-    total_w = 0.0
-    total_v = 0.0
-    for it in order.items:
-        p = products[it.product_id]
-        total_w += p.weight * it.quantity
-        total_v += p.volume * it.quantity
-    return total_w, total_v
-
-
-# -------------------------------------------------
-# JOUR 1 — allocation naïve
-# -------------------------------------------------
-def allocate_first_fit_day1(
-    orders: List[Order],
-    agents: List[Agent],
-    products: Dict[str, Product],
-) -> AllocationResult:
+def allocate_first_fit_day1(orders: List[Order], agents: List[Agent], products: Dict[str, Product]
+                            ) -> AllocationResult:
     assignments: Dict[str, List[str]] = {a.id: [] for a in agents}
     unassigned: List[str] = []
     order_totals: Dict[str, Tuple[float, float]] = {}
     cart_human: Dict[str, str] = {}
 
-    for order in orders:
-        w, v = compute_order_totals(order, products)
-        order_totals[order.id] = (w, v)
+    # Séparer les types d'agents
+    robots = [a for a in agents if a.type == "robot"]
+    humans = [a for a in agents if a.type == "human"]
+    carts = [a for a in agents if a.type == "cart"]
+    
+    # Créer une rotation des agents pour équilibrer la charge
+    robots_cycle = cycle(robots) if robots else None
+    carts_cycle = cycle(carts) if carts else None
+    humans_cycle = cycle(humans) if humans else None
+    
+    humans_used_with_cart: set = set()
 
+    for order in orders:
+        order_totals[order.id] = compute_order_totals(order, products)
         placed = False
-        for agent in agents:
-            if w <= agent.capacity_weight and v <= agent.capacity_volume:
-                assignments[agent.id].append(order.id)
-                placed = True
-                break
+
+        # 1. Essayer un robot (en rotation)
+        if robots_cycle:
+            for _ in range(len(robots)):  # Essayer chaque robot une fois
+                agent = next(robots_cycle)
+                if order_totals[order.id][0] <= agent.capacity_weight and order_totals[order.id][1] <= agent.capacity_volume:
+                    assignments[agent.id].append(order.id)
+                    placed = True
+                    break
+        
+        if placed:
+            continue
+        
+        # 2. Essayer chariot + humain (si commande trop lourde pour humain seul)
+        if not placed and carts_cycle and (order_totals[order.id][0] > humans[0].capacity_weight if humans else False):
+            for _ in range(len(carts)):
+                cart = next(carts_cycle)
+                for human in humans:
+                    if human.id not in humans_used_with_cart:
+                        if order_totals[order.id][0] <= cart.capacity_weight and order_totals[order.id][1] <= cart.capacity_volume:
+                            assignments[cart.id].append(order.id)
+                            assignments[human.id].append(order.id)
+                            cart_human[cart.id] = human.id
+                            humans_used_with_cart.add(human.id)
+                            placed = True
+                            break
+                if placed:
+                    break
+        
+        # 3. Essayer humain seul (en rotation)
+        if not placed and humans_cycle:
+            for _ in range(len(humans)):
+                human = next(humans_cycle)
+                if human.id not in humans_used_with_cart:
+                    if order_totals[order.id][0] <= human.capacity_weight and order_totals[order.id][1] <= human.capacity_volume:
+                        assignments[human.id].append(order.id)
+                        placed = True
+                        break
 
         if not placed:
             unassigned.append(order.id)
@@ -125,24 +152,59 @@ def allocate_first_fit_day2(
     )
 
 
-# -------------------------------------------------
-# Distance estimée
-# -------------------------------------------------
 def estimate_total_distance(
     orders: List[Order],
     products: Dict[str, Product],
-    warehouse: Warehouse,
-    round_trip: bool = False,
+    warehouse: Warehouse
 ) -> int:
     total = 0
-    factor = 2 if round_trip else 1
-
     for order in orders:
-        for it in order.items:
-            p = products[it.product_id]
-            total += manhattan(warehouse.entry_point, p.location) * it.quantity * factor
+        for item in order.items:
+            product = products[item.product.id]
+            total += manhattan(warehouse.entry_point, product.location) * 2
+            # print(f"DEBUG: {item.product.id} à {product.location}, distance={manhattan(warehouse.entry_point, product.location)}, qty={item.quantity} (produits égaux groupés)")
 
     return total
+
+
+# -------------------------------------------------
+# Optimisation TSP des itinéraires
+# -------------------------------------------------
+def optimize_allocation_routes(
+    allocation_result: AllocationResult,
+    orders: List[Order],
+    products: Dict[str, Product],
+    warehouse: Warehouse,
+) -> AllocationResult:
+    """
+    Ajoute les itinéraires optimisés (TSP) aux résultats d'allocation.
+    
+    Args:
+        allocation_result: Résultats d'allocation (assignments)
+        orders: Liste de toutes les commandes
+        products: Dictionnaire des produits
+        warehouse: Entrepôt (pour le point d'entrée)
+    
+    Returns:
+        AllocationResult enrichi avec les routes optimisées
+    """
+    from .routing import optimize_team_routes
+    
+    # Créer un dictionnaire des commandes
+    orders_dict = {o.id: o for o in orders}
+    
+    # Optimiser les routes pour chaque agent
+    routes = optimize_team_routes(
+        allocation_result.assignments,
+        orders,
+        products,
+        warehouse.entry_point
+    )
+    
+    # Ajouter les routes au résultat
+    allocation_result.routes = routes
+    
+    return allocation_result
 
 
 

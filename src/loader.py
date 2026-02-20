@@ -22,3 +22,12 @@ def load_json(path: str):
         data = json.load(file)
 
     return data
+
+if __name__ == "__main__":
+    # Test de la fonction load_json
+    try:
+        data = load_json("data/warehouse.json")
+        print("Contenu du JSON chargé avec succès :")
+        print(data)
+    except Exception as e:
+        print(f"Erreur lors du chargement du JSON : {e}")

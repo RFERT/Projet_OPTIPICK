@@ -1,34 +1,50 @@
 from __future__ import annotations
-from dataclasses import dataclass, field
 from typing import Dict, List
 from random import randint
 import matplotlib.pyplot as plt
 import numpy as np
 
-@dataclass(frozen=True)
 class Location:
-    x: int
-    y: int
+    def __init__(self, x: int, y: int):
+        self.x = x
+        self.y = y
 
+    def __eq__(self, other):
+        if isinstance(other, Location):
+            return self.x == other.x and self.y == other.y
+        return False
+
+    def __hash__(self):
+        return hash((self.x, self.y))
+
+    def __repr__(self):
+        return f"Location(x={self.x}, y={self.y})"
 
 
 class Warehouse:
-    def __init__(self):
-        self.grid = np.array([np.zeros(width)for row in range(height)])
-        width: int
-        height: int
-        zones: Dict[str, Dict]          # brut (jour 1)
-        entry_point: Location
+    def __init__(self, width: int, height: int, zones: Dict[str, Dict], entry_point: Location, aisles: list[list[int]]):
+        self.width: int = width
+        self.height: int = height
+        self.zones: Dict[str, Dict] = zones          # brut (jour 1)
+        self.entry_point: Location = entry_point
 
+        self.grid = np.array([[""for column in range(width)]for row in range(height)])
+        for zone_name, zone_data in zones.items():
+            for coord in zone_data["coords"]:
+                self.grid[coord[1]][coord[0]] = zone_name
+        self.grid[entry_point.y][entry_point.x] = "1"
+        for coord in aisles:
+            self.grid[coord[1]][coord[0]] = "0"
     def show(self):
         color_map = {
-        'A': 0,  # Bleu - Électronique
+        'A': 0,  # Bleu - electronique
         'B': 1,  # Marron - Livres
         'C': 2,  # Vert - Alimentaire
         'D': 3,  # Rouge - Chimie
         'E': 4,  # Orange - Textile
-        '0': 5,  # Blanc - Allée
-        '1': 6   # Violet - Entrée
+        '0': 5,  # Blanc - Allee
+        '1': 6,   # Violet - Entree
+        '': 7   # Gris - Erreur (non défini)
         }
 
         warehouse_colors = [[color_map[cell] for cell in row] for row in self.grid]
@@ -36,65 +52,66 @@ class Warehouse:
         plt.colorbar()
         plt.show()
 
-@dataclass
-class Product:
-    id: str
-    name: str
-    category: str
-    weight: float
-    volume: float
-    location: Location
-    frequency: str
-    fragile: bool
-    incompatible_with: List[str] = field(default_factory=list)
-
 class Agent:
-    # id: str
-    # type: str  # "robot" | "human" | "cart"
+    def __init__(self, type: str, id: str, capacity_weight: float, capacity_volume: float, speed: float, cost_per_hour: float, restrictions: List[str]):
+        self.type: str = type
+        self.id: str = id
+        self.capacity_weight: float = capacity_weight
+        self.capacity_volume: float = capacity_volume
+        self.speed: float = speed
+        self.cost_per_hour: float = cost_per_hour
+        self.restrictions: List[str] = restrictions
 
-    def __init__(self, type, id):
-        if type == "robot":
-            self.restrictions = {"Zone" : "C", "fragile" : True, "weight" : 10, "agent" : None}
-            self.capacity_weight, self.capacity_volume = 20, 30
-            self.speed = 2.0
-            self.cost_per_hour = 5
-            self.id = id
-        elif type == "human":
-            self.restrictions = {"Zone" : None, "fragile" : None, "weight" : None, "agent" : None}
-            self.capacity_weight, self.capacity_volume = 35, 50
-            self.speed = 1.5
-            self.cost_per_hour = 25
-            self.id = id
-        elif type == "cart":
-            self.restrictions = {"Zone" : None, "fragile" : None, "weight" : None, "agent" : "human"}
-            self.capacity_weight, self.capacity_volume = 50, 80
-            self.speed = 1.2
-            self.cost_per_hour = 3
-            self.id = id
-        else:
-            raise TypeError
+class Product:
+    def __init__(self, id: str, name: str, category: str, weight: float, 
+                 volume: float, location: Location, frequency: str, fragile: bool, 
+                 incompatible_with: List[str] = None):
+        self.id = id
+        self.name = name
+        self.category = category
+        self.weight = weight
+        self.volume = volume
+        self.location = location
+        self.frequency = frequency
+        self.fragile = fragile
+        self.incompatible_with = incompatible_with if incompatible_with is not None else []
 
-class Team:
-    def __init__(self):
-        self.limits = {"robot" : 3, "human" : 2, "cart" : 2}
+    def __repr__(self):
+        return f"Product(id={self.id}, name={self.name})"
 
-        self.agents = {"R1": Agent("robot", "R1"), "R2": Agent("robot", "R2"), "R3": Agent("robot", "R3"),\
-                       "H1": Agent("human", "H1"), "H2": Agent("human", "H2"), \
-                        "C1": Agent("cart", "C1"), "C2": Agent("cart", "C2")}
-    
-    def __str__(self):
-        return ", ".join(self.agents.keys())
+    def __eq__(self, other):
+        if isinstance(other, Product):
+            return self.id == other.id
+        return False
 
-@dataclass(frozen=True)
 class OrderItem:
-    product_id: str
-    quantity: int
-    zone: str
+    def __init__(self, product: Product, quantity: int):
+        self.product = product
+        self.quantity = quantity
 
-@dataclass
+
+    def __eq__(self, other):
+        if isinstance(other, OrderItem):
+            return (self.product == other.product and 
+                    self.quantity == other.quantity)
+        return False
+
+    def __hash__(self):
+        return hash((self.product, self.quantity))
+
+    def __repr__(self):
+        return f"OrderItem(product_id={self.product}, quantity={self.quantity})"
+
+
 class Order:
-    id: str
-    received_time: str
-    deadline: str
-    priority: str
-    items: List[OrderItem]
+    def __init__(self, id: str, received_time: str, deadline: str, priority: str, items: List[Dict], products: Dict[str, Product]):
+        self.id: str = id
+        self.received_time: str = received_time
+        self.deadline: str = deadline
+        self.priority: str = priority
+        self.items: List[OrderItem] = []
+        for item in items:
+            self.items.append(OrderItem(products[item['product_id']], item['quantity']))
+
+    def __repr__(self):
+        return f"Order(id={self.id}, priority={self.priority})"
