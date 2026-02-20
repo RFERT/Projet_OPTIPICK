@@ -1,6 +1,8 @@
 from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Dict, List, Tuple, Optional
+import pdb
+from itertools import cycle
 
 from .models import *
 from .utils import *
@@ -23,40 +25,45 @@ def allocate_first_fit_day1(orders: List[Order], agents: List[Agent], products: 
     assignments: Dict[str, List[str]] = {a.id: [] for a in agents}
     unassigned: List[str] = []
     order_totals: Dict[str, Tuple[float, float]] = {}
-    cart_human: Dict[str, str] = {}  # cart_id -> human_id (association)
+    cart_human: Dict[str, str] = {}
 
-    # Séparer les types d'agents (plus simple en vrai)
+    # Séparer les types d'agents
     robots = [a for a in agents if a.type == "robot"]
     humans = [a for a in agents if a.type == "human"]
     carts = [a for a in agents if a.type == "cart"]
     
-    # Noter quels humains sont déjà assignés à un chariot
+    # Créer une rotation des agents pour équilibrer la charge
+    robots_cycle = cycle(robots) if robots else None
+    carts_cycle = cycle(carts) if carts else None
+    humans_cycle = cycle(humans) if humans else None
+    
     humans_used_with_cart: set = set()
 
     for order in orders:
         order_totals[order.id] = compute_order_totals(order, products)
         placed = False
 
-        # Robot
-        for agent in robots:
-            if order_totals[order.id][0] <= agent.capacity_weight and order_totals[order.id][1] <= agent.capacity_volume:
-                assignments[agent.id].append(order.id)
-                placed = True
-                break
+        # 1. Essayer un robot (en rotation)
+        if robots_cycle:
+            for _ in range(len(robots)):  # Essayer chaque robot une fois
+                agent = next(robots_cycle)
+                if order_totals[order.id][0] <= agent.capacity_weight and order_totals[order.id][1] <= agent.capacity_volume:
+                    assignments[agent.id].append(order.id)
+                    placed = True
+                    break
+        
         if placed:
             continue
         
-        # Chariot + humain
-        if not placed and order_totals[order.id][0] > human.capacity_weight and order_totals[order.id][1] > human.capacity_volume:      #privilégie un humain seul si possible (moins cher et plus rapide)
-            for cart in carts:
-                # Trouver un humain qui n'est pas encore assigné à ce chariot
+        # 2. Essayer chariot + humain (si commande trop lourde pour humain seul)
+        if not placed and carts_cycle and (order_totals[order.id][0] > humans[0].capacity_weight if humans else False):
+            for _ in range(len(carts)):
+                cart = next(carts_cycle)
                 for human in humans:
                     if human.id not in humans_used_with_cart:
-                        # Vérifier la capacité du chariot (pas de restriction du humain)
                         if order_totals[order.id][0] <= cart.capacity_weight and order_totals[order.id][1] <= cart.capacity_volume:
-                            # Assigner les deux
                             assignments[cart.id].append(order.id)
-                            assignments[human.id].append(order.id)  # L'humain accompagne
+                            assignments[human.id].append(order.id)
                             cart_human[cart.id] = human.id
                             humans_used_with_cart.add(human.id)
                             placed = True
@@ -64,10 +71,11 @@ def allocate_first_fit_day1(orders: List[Order], agents: List[Agent], products: 
                 if placed:
                     break
         
-        # Humain seul
-        if not placed:
-            for human in humans:
-                if human.id not in humans_used_with_cart:  # Pas déjà avec un chariot
+        # 3. Essayer humain seul (en rotation)
+        if not placed and humans_cycle:
+            for _ in range(len(humans)):
+                human = next(humans_cycle)
+                if human.id not in humans_used_with_cart:
                     if order_totals[order.id][0] <= human.capacity_weight and order_totals[order.id][1] <= human.capacity_volume:
                         assignments[human.id].append(order.id)
                         placed = True
@@ -144,22 +152,17 @@ def allocate_first_fit_day2(
     )
 
 
-# -------------------------------------------------
-# Distance estimée
-# -------------------------------------------------
 def estimate_total_distance(
     orders: List[Order],
     products: Dict[str, Product],
-    warehouse: Warehouse,
-    round_trip: bool = False,
+    warehouse: Warehouse
 ) -> int:
     total = 0
-    factor = 2 if round_trip else 1
-
     for order in orders:
-        for it in order.items:
-            p = products[it.product_id]
-            total += manhattan(warehouse.entry_point, p.location) * it.quantity * factor
+        for item in order.items:
+            product = products[item.product.id]
+            total += manhattan(warehouse.entry_point, product.location) * 2
+            # print(f"DEBUG: {item.product.id} à {product.location}, distance={manhattan(warehouse.entry_point, product.location)}, qty={item.quantity} (produits égaux groupés)")
 
     return total
 

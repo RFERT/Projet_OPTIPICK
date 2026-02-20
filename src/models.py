@@ -52,6 +52,15 @@ class Warehouse:
         plt.colorbar()
         plt.show()
 
+class Agent:
+    def __init__(self, type: str, id: str, capacity_weight: float, capacity_volume: float, speed: float, cost_per_hour: float, restrictions: List[str]):
+        self.type: str = type
+        self.id: str = id
+        self.capacity_weight: float = capacity_weight
+        self.capacity_volume: float = capacity_volume
+        self.speed: float = speed
+        self.cost_per_hour: float = cost_per_hour
+        self.restrictions: List[str] = restrictions
 
 class Product:
     def __init__(self, id: str, name: str, category: str, weight: float, 
@@ -75,16 +84,6 @@ class Product:
             return self.id == other.id
         return False
 
-class Agent:
-    def __init__(self, type, id, capacity_weight, capacity_volume, speed, cost_per_hour, restrictions):
-        self.type = type
-        self.id = id
-        self.capacity_weight = capacity_weight
-        self.capacity_volume = capacity_volume
-        self.speed = speed
-        self.cost_per_hour = cost_per_hour
-        self.restrictions = restrictions
-
 class OrderItem:
     def __init__(self, product: Product, quantity: int):
         self.product = product
@@ -106,11 +105,11 @@ class OrderItem:
 
 class Order:
     def __init__(self, id: str, received_time: str, deadline: str, priority: str, items: List[Dict], products: Dict[str, Product]):
-        self.id = id
-        self.received_time = received_time
-        self.deadline = deadline
-        self.priority = priority
-        self.items = []
+        self.id: str = id
+        self.received_time: str = received_time
+        self.deadline: str = deadline
+        self.priority: str = priority
+        self.items: List[OrderItem] = []
         for item in items:
             self.items.append(OrderItem(products[item['product_id']], item['quantity']))
 

@@ -1,12 +1,13 @@
 
 from src.models import *
 from typing import Tuple
+import pdb
 
 def compute_order_totals(order: Order, products: Dict[str, Product]) -> Tuple[float, float]:
     total_w = 0.0
     total_v = 0.0
     for it in order.items:
-        p = products[it.product_id]
+        p = products[it.product.id]
         total_w += p.weight * it.quantity
         total_v += p.volume * it.quantity
     return total_w, total_v
@@ -33,7 +34,18 @@ def JSON_to_py(warehouse: Dict, products: List[Dict], agents: List[Dict], orders
         fragile=product_dict['fragile'],
         incompatible_with=product_dict.get('incompatible_with', [])
         )for product_dict in products}
-    agents = {agent['id'] : Agent(agent['id'], agent['type'], agent['capacity_weight'], agent['capacity_volume'], agent['speed'], agent['cost_per_hour'], agent['restrictions']) for agent in agents}
+    # pdb.set_trace()
+    agents = [Agent(agent['type'], agent['id'], agent['capacity_weight'], agent['capacity_volume'], agent['speed'], agent['cost_per_hour'], agent['restrictions']) for agent in agents]
+    # je crois que agents est une liste de dicts, pas un dict d'agents
+    # agents = [{agent['id']: Agent(
+    #     id=agent['id'],
+    #     type=agent['type'],
+    #     capacity_weight=agent['capacity_weight'],
+    #     capacity_volume=agent['capacity_volume'],
+    #     speed=agent['speed'],
+    #     cost_per_hour=agent['cost_per_hour'],
+    #     restrictions=agent['restrictions']
+    # )} for agent in agents]
     orders = [Order(
         id=order_dict['id'],
         received_time=order_dict['received_time'],
