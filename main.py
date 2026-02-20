@@ -1,4 +1,3 @@
-
 from pathlib import Path
 from src.allocation import allocate_first_fit_day1, allocate_first_fit_day2, estimate_total_distance, optimize_allocation_routes
 from src.loader import load_json
@@ -6,6 +5,30 @@ from src.models import *
 from src.utils import *
 from src.routing import extract_unique_locations, build_nodes_with_entry, compute_distance_matrix, nearest_neighbor_tsp, calculate_route_distance
 import pdb
+from suite import run_all_days_suite
+
+def main():
+    base_dir = Path(__file__).resolve().parent
+    data_dir = base_dir / "data"
+
+    # JSON -> DICT
+    warehouse = load_json(data_dir / "warehouse.json")
+    products = load_json(data_dir / "products.json")
+    agents = load_json(data_dir / "agents.json")
+    orders = load_json(data_dir / "orders.json")
+    print("Données chargées depuis JSON")
+
+    # DICT(JSON) -> objets python
+    warehouse, products, agents, orders = JSON_to_py(warehouse, products, agents, orders)
+    print("Données converties en objets Python")
+    # warehouse.show()
+    # print("Products:", len(products), "| Agents:", len(agents), "| Orders:", len(orders))
+
+    print("\n=== RÉSULTATS ===")
+    # pdb.set_trace()
+    run_day1(warehouse, products, agents, orders)
+    run_day2(warehouse, products, agents, orders)
+    run_all_days_suite(assignments, agents, orders, products, warehouse)
 
 def run_day1(warehouse: Warehouse, products: Dict[str, Product], agents: List[Agent], orders: List[Order]):
     print("\nJOUR 1 : Allocation naïve (sans contraintes)")
@@ -47,7 +70,7 @@ def run_day1(warehouse: Warehouse, products: Dict[str, Product], agents: List[Ag
             f"volume total={total_v:.2f}dm³ (max commande={max_v:.2f}dm³)"
         )
 
-def run_day2(warehouse, products, agents, orders):
+def run_day2(warehouse: Warehouse, products: Dict[str, Product], agents: List[Agent], orders: List[Order]):
     print("\n=== JOUR 2 : Contraintes activées ===")
 
     result = allocate_first_fit_day2(orders, agents, products, warehouse)
@@ -66,8 +89,8 @@ def run_day2(warehouse, products, agents, orders):
         for cart_id, human_id in result.cart_human.items():
             print(f"- {cart_id} est guidé par {human_id}")
 
-    dist_one_way = estimate_total_distance(orders, products, warehouse, round_trip=False)
-    dist_round_trip = estimate_total_distance(orders, products, warehouse, round_trip=True)
+    dist_one_way = estimate_total_distance(orders, products, warehouse)
+    dist_round_trip = estimate_total_distance(orders, products, warehouse) * 2  # Aller-retour pour chaque produit
     assigned_count = sum(len(assignment_list) for assignment_list in result.assignments.values())
 
     print("\n== Évaluation Jour 2 ==")
@@ -90,181 +113,193 @@ def run_day2(warehouse, products, agents, orders):
             f"volume={total_v:.2f}/{agent.capacity_volume}"
         )
 
-def run_day3_step1(warehouse, products, agents, orders):
-    """
-    JOUR 3 - ÉTAPE 1 : Extraire les emplacements uniques pour chaque agent.
-    
-    """
-    print("\n=== JOUR 3 - ÉTAPE 1 : Extraction des emplacements uniques ===\n")
-    
-    # D'abord, allocate les commandes aux agents (comme Jour 2)
-    from src.allocation import allocate_first_fit_day2
-    result = allocate_first_fit_day2(orders, agents, products, warehouse)
-    
-    # Pour chaque agent, extraire les emplacements uniques
-    for agent in agents:
-        # Récupérer les IDs des commandes assignées à cet agent
-        order_ids = result.assignments[agent.id]
-        
-        # Récupérer tous les produits de ces commandes
-        agent_products = []
-        for order_id in order_ids:
-            # Trouver la commande
-            found_order = next((candidate_order for candidate_order in orders if candidate_order.id == order_id), None)
-            if found_order:
-                # Pour chaque item de la commande
-                for item in found_order.items:
-                    # Ajouter le produit
-                    if item.product_id in products:
-                        agent_products.append(products[item.product_id])
-        
-        # Extraire les emplacements uniques avec notre fonction
-        unique_locations = extract_unique_locations(agent_products)
-        
-        # Afficher les résultats
-        print(f" Agent: {agent.id} (Type: {agent.type})")
-        print(f"   - Commandes assignées: {order_ids}")
-        print(f"   - Nombre de produits: {len(agent_products)}")
-        print(f"   - Emplacements uniques: {len(unique_locations)}")
-        print(f"   - Localisation des emplacements:")
-        for loc in sorted(unique_locations, key=lambda l: (l.x, l.y)):
-            print(f"      • Position ({loc.x}, {loc.y})")
-        print()
+# def run_day3(warehouse, products, agents, orders):
 
-def run_day3_step2(warehouse, products, agents, orders):
-    """
-    JOUR 3 - ÉTAPE  : Ajouter l'entrée au début ET à la fin des emplacements.
-    
-    Objectif: Transformer les emplacements uniques en un CIRCUIT FERMÉ.
-    
-    Cela signifie que chaque agent PART de l'entrée et DOIT Y RETOURNER.
-    """
-    print("\n=== JOUR 3 - ÉTAPE  : Ajouter l'entrée (point de départ et retour) ===\n")
-    
-    # D'abord, allocate les commandes aux agents (comme Jour 2)
-    from src.allocation import allocate_first_fit_day2
-    result = allocate_first_fit_day2(orders, agents, products, warehouse)
-    
-    # Pour chaque agent, construire la liste des nœuds TSP
-    for agent in agents:
-        # Récupérer les IDs des commandes assignées à cet agent
-        order_ids = result.assignments[agent.id]
-        
-        # Si l'agent n'a rien à faire, passer
-        if not order_ids:
-            print(f"  Agent {agent.id}: Aucune commande (pas de tournée)")
-            continue
-        
-        # Récupérer tous les produits de ces commandes
-        agent_products = []
-        for order_id in order_ids:
-            found_order = next((candidate_order for candidate_order in orders if candidate_order.id == order_id), None)
-            if found_order:
-                for item in found_order.items:
-                    if item.product_id in products:
-                        agent_products.append(products[item.product_id])
-        
-        # ÉTAPE  : Extraire les emplacements uniques
-        unique_locations = extract_unique_locations(agent_products)
-        
-        # ÉTAPE  : Ajouter l'entrée au début ET à la fin
-        nodes = build_nodes_with_entry(warehouse.entry_point, unique_locations)
-        
-        # Afficher les résultats
-        print(f" Agent: {agent.id} (Type: {agent.type})")
-        print(f"   ├─ Étape  (extraction) : {len(unique_locations)} emplacements uniques")
-        print(f"   └─ Étape  (circuit) : {len(nodes)} nœuds TSP (avec entrée début + fin)")
-        print(f"\n     Séquence de nœuds pour le TSP :")
-        
-        for i, node in enumerate(nodes):
-            if i == 0:
-                print(f"       [{i}]  DÉPART (Entrée)  : {node}")
-            elif i == len(nodes) - 1:
-                print(f"       [{i}]  RETOUR (Entrée)  : {node}")
-            else:
-                # Trouver quel produit est à ce nœud
-                print(f"       [{i}]  Emplacement      : {node}")
-        
-        print()
+#     print("\n=== JOUR 3 : Optimisation des itinéraires (TSP) ===")
+#     # Extraction des emplacements uniques
+#     run_day3_step1(warehouse, products, agents, orders)
+#     # Ajouter l'entrée (point de départ et retour)
+#     run_day3_step2(warehouse, products, agents, orders)    
+#     # Calculer la matrice de distances
+#     run_day3_step3(warehouse, products, agents, orders)
+#     # Résolution TSP (Nearest Neighbor)
+#     run_day3_step4(warehouse, products, agents, orders)
 
-def run_day3_step3(warehouse, products, agents, orders):
-    """
-    JOUR 3 - ÉTAPE : Calculer la matrice de distances Manhattan.
-    """
-    print("\n=== JOUR 3 - ÉTAPE  : Calculer la matrice de distances ===\n")
+# def run_day3_step1(warehouse, products, agents, orders):
+#     """
+#     JOUR 3 - ÉTAPE 1 : Extraire les emplacements uniques pour chaque agent.
     
-    # D'abord, allocate les commandes aux agents (comme Jour 2)
-    from src.allocation import allocate_first_fit_day2
-    result = allocate_first_fit_day2(orders, agents, products, warehouse)
+#     """
+#     print("\n=== JOUR 3 - ÉTAPE 1 : Extraction des emplacements uniques ===\n")
     
-    # Pour chaque agent, construire et afficher la matrice de distances
-    for agent in agents:
-        # Récupérer les IDs des commandes assignées à cet agent
-        order_ids = result.assignments[agent.id]
+#     # D'abord, allocate les commandes aux agents (comme Jour 2)
+#     from src.allocation import allocate_first_fit_day2
+#     result = allocate_first_fit_day2(orders, agents, products, warehouse)
+    
+#     # Pour chaque agent, extraire les emplacements uniques
+#     for agent in agents:
+#         # Récupérer les IDs des commandes assignées à cet agent
+#         order_ids = result.assignments[agent.id]
         
-        # Si l'agent n'a rien à faire, passer
-        if not order_ids:
-            continue
+#         # Récupérer tous les produits de ces commandes
+#         agent_products = []
+#         for order_id in order_ids:
+#             # Trouver la commande
+#             found_order = next((candidate_order for candidate_order in orders if candidate_order.id == order_id), None)
+#             if found_order:
+#                 # Pour chaque item de la commande
+#                 for item in found_order.items:
+#                     # Ajouter le produit
+#                     if item.product_id in products:
+#                         agent_products.append(products[item.product_id])
         
-        # Récupérer tous les produits de ces commandes
-        agent_products = []
-        for order_id in order_ids:
-            found_order = next((candidate_order for candidate_order in orders if candidate_order.id == order_id), None)
-            if found_order:
-                for item in found_order.items:
-                    if item.product_id in products:
-                        agent_products.append(products[item.product_id])
+#         # Extraire les emplacements uniques avec notre fonction
+#         unique_locations = extract_unique_locations(agent_products)
         
-        # Étapes précédentes
-        unique_locations = extract_unique_locations(agent_products)
-        nodes = build_nodes_with_entry(warehouse.entry_point, unique_locations)
-        
-        # ÉTAPE  : Calculer la matrice de distances
-        distance_matrix = compute_distance_matrix(nodes)
-        
-        # Afficher les résultats
-        print(f" Agent: {agent.id} (Type: {agent.type})")
-        print(f"   • Nombre de nœuds : {len(nodes)}")
-        print(f"   • Taille matrice : {len(distance_matrix)} x {len(distance_matrix[0])}")
-        
-        # Afficher la matrice complète si elle n'est pas trop grande
-        if len(nodes) <= 6:
-            print(f"\n    Matrice de distances (complète) :")
-            
-            # En-têtes des colonnes
-            header = "      "
-            for col_index in range(len(nodes)):
-                header += f"[{col_index}]  "
-            print(header)
-            
-            # Lignes de la matrice
-            for row_index, row in enumerate(distance_matrix):
-                line = f"   [{row_index}]  "
-                for dist in row:
-                    line += f"{dist:3d}  "
-                print(line)
-        else:
-            # Pour les grandes matrices, afficher des statistiques
-            all_distances = []
-            for row in distance_matrix:
-                all_distances.extend(row)
-            
-            print(f"\n    Statistiques de la matrice (trop grande pour affichage complet) :")
-            print(f"       • Distance minimum : {min(all_distances)}")
-            print(f"       • Distance maximum : {max(all_distances)}")
-            print(f"       • Distance moyenne : {sum(all_distances) / len(all_distances):.1f}")
-            
-            # Afficher un petit exemple
-            print(f"\n    Exemples de distances (premiers 4 nœuds) :")
-            for row_index in range(min(4, len(distance_matrix))):
-                line = f"       Du nœud [{row_index}] : "
-                for col_index in range(min(4, len(distance_matrix[0]))):
-                    line += f"{distance_matrix[row_index][col_index]:3d}  "
-                print(line)
-        
-        print()
+#         # Afficher les résultats
+#         print(f" Agent: {agent.id} (Type: {agent.type})")
+#         print(f"   - Commandes assignées: {order_ids}")
+#         print(f"   - Nombre de produits: {len(agent_products)}")
+#         print(f"   - Emplacements uniques: {len(unique_locations)}")
+#         print(f"   - Localisation des emplacements:")
+#         for loc in sorted(unique_locations, key=lambda l: (l.x, l.y)):
+#             print(f"      • Position ({loc.x}, {loc.y})")
+#         print()
 
-def run_day3_step4(warehouse, products, agents, orders):
+# def run_day3_step2(warehouse, products, agents, orders):
+#     """
+#     JOUR 3 - ÉTAPE  : Ajouter l'entrée au début ET à la fin des emplacements.
+    
+#     Objectif: Transformer les emplacements uniques en un CIRCUIT FERMÉ.
+    
+#     Cela signifie que chaque agent PART de l'entrée et DOIT Y RETOURNER.
+#     """
+#     print("\n=== JOUR 3 - ÉTAPE  : Ajouter l'entrée (point de départ et retour) ===\n")
+    
+#     # D'abord, allocate les commandes aux agents (comme Jour 2)
+#     from src.allocation import allocate_first_fit_day2
+#     result = allocate_first_fit_day2(orders, agents, products, warehouse)
+    
+#     # Pour chaque agent, construire la liste des nœuds TSP
+#     for agent in agents:
+#         # Récupérer les IDs des commandes assignées à cet agent
+#         order_ids = result.assignments[agent.id]
+        
+#         # Si l'agent n'a rien à faire, passer
+#         if not order_ids:
+#             print(f"  Agent {agent.id}: Aucune commande (pas de tournée)")
+#             continue
+        
+#         # Récupérer tous les produits de ces commandes
+#         agent_products = []
+#         for order_id in order_ids:
+#             found_order = next((candidate_order for candidate_order in orders if candidate_order.id == order_id), None)
+#             if found_order:
+#                 for item in found_order.items:
+#                     if item.product_id in products:
+#                         agent_products.append(products[item.product_id])
+        
+#         # ÉTAPE  : Extraire les emplacements uniques
+#         unique_locations = extract_unique_locations(agent_products)
+        
+#         # ÉTAPE  : Ajouter l'entrée au début ET à la fin
+#         nodes = build_nodes_with_entry(warehouse.entry_point, unique_locations)
+        
+#         # Afficher les résultats
+#         print(f" Agent: {agent.id} (Type: {agent.type})")
+#         print(f"   ├─ Étape  (extraction) : {len(unique_locations)} emplacements uniques")
+#         print(f"   └─ Étape  (circuit) : {len(nodes)} nœuds TSP (avec entrée début + fin)")
+#         print(f"\n     Séquence de nœuds pour le TSP :")
+        
+#         for i, node in enumerate(nodes):
+#             if i == 0:
+#                 print(f"       [{i}]  DÉPART (Entrée)  : {node}")
+#             elif i == len(nodes) - 1:
+#                 print(f"       [{i}]  RETOUR (Entrée)  : {node}")
+#             else:
+#                 # Trouver quel produit est à ce nœud
+#                 print(f"       [{i}]  Emplacement      : {node}")
+        
+#         print()
+
+# def run_day3_step3(warehouse, products, agents, orders):
+#     """
+#     JOUR 3 - ÉTAPE : Calculer la matrice de distances Manhattan.
+#     """
+#     print("\n=== JOUR 3 - ÉTAPE  : Calculer la matrice de distances ===\n")
+    
+#     # D'abord, allocate les commandes aux agents (comme Jour 2)
+#     from src.allocation import allocate_first_fit_day2
+#     result = allocate_first_fit_day2(orders, agents, products, warehouse)
+    
+#     # Pour chaque agent, construire et afficher la matrice de distances
+#     for agent in agents:
+#         # Récupérer les IDs des commandes assignées à cet agent
+#         order_ids = result.assignments[agent.id]
+        
+#         # Si l'agent n'a rien à faire, passer
+#         if not order_ids:
+#             continue
+        
+#         # Récupérer tous les produits de ces commandes
+#         agent_products = []
+#         for order_id in order_ids:
+#             found_order = next((candidate_order for candidate_order in orders if candidate_order.id == order_id), None)
+#             if found_order:
+#                 for item in found_order.items:
+#                     if item.product_id in products:
+#                         agent_products.append(products[item.product_id])
+        
+#         # Étapes précédentes
+#         unique_locations = extract_unique_locations(agent_products)
+#         nodes = build_nodes_with_entry(warehouse.entry_point, unique_locations)
+        
+#         # ÉTAPE  : Calculer la matrice de distances
+#         distance_matrix = compute_distance_matrix(nodes)
+        
+#         # Afficher les résultats
+#         print(f" Agent: {agent.id} (Type: {agent.type})")
+#         print(f"   • Nombre de nœuds : {len(nodes)}")
+#         print(f"   • Taille matrice : {len(distance_matrix)} x {len(distance_matrix[0])}")
+        
+#         # Afficher la matrice complète si elle n'est pas trop grande
+#         if len(nodes) <= 6:
+#             print(f"\n    Matrice de distances (complète) :")
+            
+#             # En-têtes des colonnes
+#             header = "      "
+#             for col_index in range(len(nodes)):
+#                 header += f"[{col_index}]  "
+#             print(header)
+            
+#             # Lignes de la matrice
+#             for row_index, row in enumerate(distance_matrix):
+#                 line = f"   [{row_index}]  "
+#                 for dist in row:
+#                     line += f"{dist:3d}  "
+#                 print(line)
+#         else:
+#             # Pour les grandes matrices, afficher des statistiques
+#             all_distances = []
+#             for row in distance_matrix:
+#                 all_distances.extend(row)
+            
+#             print(f"\n    Statistiques de la matrice (trop grande pour affichage complet) :")
+#             print(f"       • Distance minimum : {min(all_distances)}")
+#             print(f"       • Distance maximum : {max(all_distances)}")
+#             print(f"       • Distance moyenne : {sum(all_distances) / len(all_distances):.1f}")
+            
+#             # Afficher un petit exemple
+#             print(f"\n    Exemples de distances (premiers 4 nœuds) :")
+#             for row_index in range(min(4, len(distance_matrix))):
+#                 line = f"       Du nœud [{row_index}] : "
+#                 for col_index in range(min(4, len(distance_matrix[0]))):
+#                     line += f"{distance_matrix[row_index][col_index]:3d}  "
+#                 print(line)
+        
+#         print()
+
+# def run_day3_step4(warehouse, products, agents, orders):
     """
     JOUR 3 - ÉTAPE 4 : Résoudre le TSP avec l'heuristique du PLUS PROCHE VOISIN.
     
@@ -336,39 +371,6 @@ def run_day3_step4(warehouse, products, agents, orders):
         print(f"   📈 Cette tournée visite {len(unique_locations)} emplacements différents")
         print()
 
-def main():
-    base_dir = Path(__file__).resolve().parent
-    data_dir = base_dir / "data"
-
-    # JSON -> DICT
-    warehouse = load_json(data_dir / "warehouse.json")
-    products = load_json(data_dir / "products.json")
-    agents = load_json(data_dir / "agents.json")
-    orders = load_json(data_dir / "orders.json")
-    print("Données chargées depuis JSON")
-
-    # DICT(JSON) -> objets python
-    warehouse, products, agents, orders = JSON_to_py(warehouse, products, agents, orders)
-    print("Données converties en objets Python")
-    # warehouse.show()
-    # print("Products:", len(products), "| Agents:", len(agents), "| Orders:", len(orders))
-
-    print("\n=== RÉSULTATS ===")
-    # pdb.set_trace()
-    run_day1(warehouse, products, agents, orders)
-
-
-    # run_day2(warehouse, products, agents, orders)
-    
-    # # Jour 3 - Étape : Extraction des emplacements uniques
-    # run_day3_step1(warehouse, products, agents, orders)
-    
-    # # Jour 3 - Étape : Ajouter l'entrée (point de départ et retour)
-    # run_day3_step2(warehouse, products, agents, orders)    
-    # # Jour 3 - Étape : Calculer la matrice de distances
-    # run_day3_step3(warehouse, products, agents, orders)
-    # # Jour 3 - Étape 4 : Résolution TSP (Nearest Neighbor)
-    # run_day3_step4(warehouse, products, agents, orders)
 
 if __name__ == "__main__":
     main()

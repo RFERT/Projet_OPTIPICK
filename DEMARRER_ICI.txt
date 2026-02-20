@@ -1,0 +1,215 @@
+╔═══════════════════════════════════════════════════════════════════════════════╗
+║                    🚀 LANCER L'APPLICATION STREAMLIT 🚀                       ║
+║                                                                               ║
+║                          OPTIPICK - Interface Interactive                     ║
+╚═══════════════════════════════════════════════════════════════════════════════╝
+
+
+✅ VÉRIFICATION COMPLÈTE - TOUS LES TESTS RÉUSSIS !
+═════════════════════════════════════════════════════════════════════════════════
+
+✓ Python 3.13.1 ...................... OK
+✓ Streamlit 1.51.0 .................... OK
+✓ Matplotlib 3.10.8 ................... OK
+✓ NumPy 2.2.6 ......................... OK
+✓ Pandas 2.3.3 ........................ OK
+✓ Fichiers JSON ....................... OK (4 fichiers)
+✓ Fichiers source ..................... OK (6 fichiers)
+
+
+🚀 MÉTHODE 1 : DOUBLE-CLIC (Windows) - LE PLUS SIMPLE ⭐
+═════════════════════════════════════════════════════════════════════════════════
+
+1. Trouvez le fichier : launch_app.bat
+   Chemin : c:\Users\rolan\Documents\HETIC\Deuxième_année\FORGE\Projet_OPTIPICK\
+
+2. Double-cliquez sur : launch_app.bat
+
+3. Un terminal s'ouvre et affiche :
+   ┌─────────────────────────────────────────────────────────────────┐
+   │ 2024-XX-XX 14:30:15.XXX Collecting usage statistics...          │
+   │ You can now view your Streamlit app in your browser.            │
+   │ Local URL: http://localhost:8501                                │
+   └─────────────────────────────────────────────────────────────────┘
+
+4. Votre navigateur ouvre automatiquement :
+   http://localhost:8501
+
+5. 🎉 L'application est prête !
+
+
+🚀 MÉTHODE 2 : POWERSCRIPT (Terminal PowerShell) - RECOMMANDÉ
+═════════════════════════════════════════════════════════════════════════════════
+
+1. Ouvrez PowerShell dans le répertoire du projet
+   ou tapez : cd c:\Users\rolan\Documents\HETIC\Deuxième_année\FORGE\Projet_OPTIPICK
+
+2. Exécutez le lanceur PowerShell :
+   .\launch_app.ps1
+
+3. Si vous avez une erreur de permission, exécutez d'abord :
+   Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+
+4. L'application se lance automatiquement à http://localhost:8501
+
+
+🚀 MÉTHODE 3 : LIGNE DE COMMANDE MANUELLE
+═════════════════════════════════════════════════════════════════════════════════
+
+1. Ouvrez un terminal (PowerShell ou CMD)
+
+2. Allez au répertoire du projet :
+   cd c:\Users\rolan\Documents\HETIC\Deuxième_année\FORGE\Projet_OPTIPICK
+
+3. Lancez Streamlit :
+   streamlit run app_streamlit.py
+
+4. Ouvrez dans votre navigateur :
+   http://localhost:8501
+
+
+📌 NOTES IMPORTANTES
+═════════════════════════════════════════════════════════════════════════════════
+
+PORT PAR DÉFAUT
+  L'application utilise le port 8501
+  Si le port est occupé, Streamlit en choisira un autre automatiquement
+
+NAVIGATEUR RECOMMANDÉ
+  ✓ Chrome (recommandé)
+  ✓ Firefox
+  ✓ Edge
+  ✓ Safari
+
+L'APPLICATION DOIT RESTER OUVERTE
+  Ne fermez pas le terminal pour que l'application continue de fonctionner
+
+ACCÈS LOCAL ET RÉSEAU
+  Local  : http://localhost:8501
+  Réseau : http://[YOUR_IP]:8501 (pour autre ordinateur)
+
+
+⏹️ ARRÊTER L'APPLICATION
+═════════════════════════════════════════════════════════════════════════════════
+
+Méthode 1 : Terminal
+  Appuyez sur Ctrl + C dans le terminal
+
+Méthode 2 : Navigateur
+  Fermez l'onglet (l'application continuera en arrière-plan)
+  Fermez le terminal pour arrêter complètement
+
+
+🔍 DÉPANNAGE RAPIDE
+═════════════════════════════════════════════════════════════════════════════════
+
+PROBLÈME : "streamlit: command not found"
+SOLUTION  : Installez Streamlit
+  > pip install streamlit
+
+PROBLÈME : Port 8501 déjà utilisé
+SOLUTION  : Laissez Streamlit choisir un autre port (automatique)
+  ou tue le processus précédent
+
+PROBLÈME : Fichiers JSON non trouvés
+SOLUTION  : Vérifiez que vous lancez depuis le bon répertoire
+  > cd c:\Users\rolan\Documents\HETIC\Deuxième_année\FORGE\Projet_OPTIPICK
+  > streamlit run app_streamlit.py
+
+
+📊 PREMIÈRE UTILISATION - WORKFLOW RECOMMANDÉ
+═════════════════════════════════════════════════════════════════════════════════
+
+ÉTAPE 1 : ACCUEIL (5 min)
+└─ Comprendre le projet et l'entrepôt
+
+ÉTAPE 2 : ALLOCATION (5 min)
+└─ Cliquer "Lancer l'allocation (Jour 2)"
+└─ Observer comment les commandes sont distribuées
+
+ÉTAPE 3 : SIMULATION (5 min)
+└─ Cliquer "Optimiser les routes avec TSP"
+└─ Voir les trajets optimisés des agents
+
+ÉTAPE 4 : STATISTIQUES (5 min)
+└─ Analyser Jour 3 (distances et temps)
+└─ Analyser Jour 4 (équilibre de charge)
+
+ÉTAPE 5 : RECOMMANDATIONS (5 min)
+└─ Lire l'analyse Jour 5
+└─ Comprendre les propositions d'optimisation
+
+⏱️ TOTAL : ~25 minutes pour une première compréhension complète
+
+
+💾 DONNÉES UTILISÉES
+═════════════════════════════════════════════════════════════════════════════════
+
+L'application charge automatiquement :
+
+✓ Entrepôt        : data/warehouse.json (grille 10×8, 5 zones)
+✓ Produits        : data/products.json (~100 produits)
+✓ Agents          : data/agents.json (3 robots, 2 humains, 2 chariots)
+✓ Commandes       : data/orders.json (20-30 commandes)
+
+
+🔄 FONCTIONNALITÉS PRINCIPALES
+═════════════════════════════════════════════════════════════════════════════════
+
+1. 🏠 ACCUEIL
+   • Vue d'ensemble du projet
+   • Plan d'entrepôt interactif
+   • Légende des zones et agents
+
+2. 📋 ALLOCATION DES COMMANDES
+   • Algorithme First-Fit avec contraintes
+   • Tableau de distribution
+   • Détails produits par agent
+
+3. 🚀 SIMULATION DES DÉPLACEMENTS
+   • Optimisation TSP
+   • Visualisation des routes
+   • Métriques distance/temps
+
+4. 📊 STATISTIQUES & OPTIMISATION
+   • Résultats Jour 3 (distance, temps)
+   • Résultats Jour 4 (équilibre charge)
+   • Graphiques comparatifs
+
+5. 🔍 ANALYSE JOUR 5
+   • Fréquence des produits
+   • Recommandations stockage
+   • Stratégies d'investissement
+
+
+📞 SUPPORT
+═════════════════════════════════════════════════════════════════════════════════
+
+Documentation complète :
+├─ README_STREAMLIT.md ................. Guide Streamlit détaillé
+├─ GUIDE_STREAMLIT.py .................. Guide complet (~500 lignes)
+├─ SYNTHESE_STREAMLIT.txt .............. Cette synthèse
+└─ app_streamlit.py ..................... Code source avec docstrings
+
+Aide rapide :
+├─ Dans l'app : Utilisez les expanders pour plus d'infos
+├─ En terminal : streamlit run app_streamlit.py --logger.level=debug
+└─ En ligne : https://docs.streamlit.io/
+
+
+✨ PRÊT À DÉMARRER !
+═════════════════════════════════════════════════════════════════════════════════
+
+Lancez maintenant :
+  > streamlit run app_streamlit.py
+
+ou double-cliquez :
+  launch_app.bat
+
+À bientôt dans OPTIPICK ! 🚀📦
+
+
+═════════════════════════════════════════════════════════════════════════════════
+Interface Streamlit - Février 2026
+OPTIPICK - Optimisation de Tournées d'Entrepôt Interactive
+═════════════════════════════════════════════════════════════════════════════════

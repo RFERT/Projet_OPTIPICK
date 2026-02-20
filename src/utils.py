@@ -17,13 +17,13 @@ def manhattan(a: Location, b: Location) -> int:
     return abs(a.x - b.x) + abs(a.y - b.y)
 
 def JSON_to_py(warehouse: Dict, products: List[Dict], agents: List[Dict], orders: List[Dict]):
-    warehouse = Warehouse(
+    warehouse: Warehouse = Warehouse(
         width=warehouse['dimensions']['width'],
         height=warehouse['dimensions']['height'],
         zones=warehouse['zones'],
         entry_point=Location(warehouse['entry_point'][0], warehouse['entry_point'][1]),
         aisles=warehouse['aisles'])
-    products = {product_dict['id']: Product(
+    products: Dict[str, Product] = {product_dict['id']: Product(
         id=product_dict['id'],
         name=product_dict['name'],
         category=product_dict['category'],
@@ -35,18 +35,8 @@ def JSON_to_py(warehouse: Dict, products: List[Dict], agents: List[Dict], orders
         incompatible_with=product_dict.get('incompatible_with', [])
         )for product_dict in products}
     # pdb.set_trace()
-    agents = [Agent(agent['type'], agent['id'], agent['capacity_weight'], agent['capacity_volume'], agent['speed'], agent['cost_per_hour'], agent['restrictions']) for agent in agents]
-    # je crois que agents est une liste de dicts, pas un dict d'agents
-    # agents = [{agent['id']: Agent(
-    #     id=agent['id'],
-    #     type=agent['type'],
-    #     capacity_weight=agent['capacity_weight'],
-    #     capacity_volume=agent['capacity_volume'],
-    #     speed=agent['speed'],
-    #     cost_per_hour=agent['cost_per_hour'],
-    #     restrictions=agent['restrictions']
-    # )} for agent in agents]
-    orders = [Order(
+    agents: List[Agent] = [Agent(agent['type'], agent['id'], agent['capacity_weight'], agent['capacity_volume'], agent['speed'], agent['cost_per_hour'], agent['restrictions']) for agent in agents]
+    orders: List[Order] = [Order(
         id=order_dict['id'],
         received_time=order_dict['received_time'],
         deadline=order_dict['deadline'],

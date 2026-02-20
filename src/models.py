@@ -35,6 +35,7 @@ class Warehouse:
         self.grid[entry_point.y][entry_point.x] = "1"
         for coord in aisles:
             self.grid[coord[1]][coord[0]] = "0"
+            
     def show(self):
         color_map = {
         'A': 0,  # Bleu - electronique

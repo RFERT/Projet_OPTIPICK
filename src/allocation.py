@@ -92,15 +92,7 @@ def allocate_first_fit_day1(orders: List[Order], agents: List[Agent], products: 
     )
 
 
-# -------------------------------------------------
-# JOUR 2 — allocation avec contraintes + cart nécessite humain
-# -------------------------------------------------
-def allocate_first_fit_day2(
-    orders: List[Order],
-    agents: List[Agent],
-    products: Dict[str, Product],
-    warehouse: Warehouse,
-) -> AllocationResult:
+def allocate_first_fit_day2(orders: List[Order], agents: List[Agent], products: Dict[str, Product], warehouse: Warehouse) -> AllocationResult:
     assignments: Dict[str, List[str]] = {a.id: [] for a in agents}
     unassigned: List[str] = []
     order_totals: Dict[str, Tuple[float, float]] = {}
@@ -108,16 +100,22 @@ def allocate_first_fit_day2(
     # humains disponibles pour accompagner les carts
     humans_available: List[str] = [a.id for a in agents if a.type == "human"]
     cart_human: Dict[str, str] = {}  # cart_id -> human_id
-        # Tri automatique des agents pour Jour 2 : robot -> cart -> human
+    
+    # Tri automatique des agents pour Jour 2 : robot -> cart -> human
     type_priority = {"robot": 0, "cart": 1, "human": 2}
     agents_sorted = sorted(agents, key=lambda a: type_priority.get(a.type, 99))
-
 
     for order in orders:
         w, v = compute_order_totals(order, products)
         order_totals[order.id] = (w, v)
 
         placed = False
+        
+        # Stratégie "least loaded" : chercher l'agent avec le moins de commandes
+        # parmi ceux qui peuvent prendre la commande
+        best_agent = None
+        best_load = float('inf')
+        
         for agent in agents_sorted:
             if not check_capacity(order, agent, products):
                 continue
@@ -127,19 +125,30 @@ def allocate_first_fit_day2(
                 continue
             if not check_no_zones(order, agent, products, warehouse):
                 continue
-
-            # règle cart → nécessite humain
+            
+            # Pour les carts, vérifier qu'un humain est disponible
             if agent.type == "cart":
-                if agent.id not in cart_human:
-                    # ce cart n'a pas encore d'humain assigné
-                    if not humans_available:
-                        continue
+                if agent.id not in cart_human and not humans_available:
+                    continue
+            
+            # Compter le nombre de commandes actuel pour cet agent
+            current_load = len(assignments[agent.id])
+            
+            # Prendre l'agent avec la charge minimale
+            if current_load < best_load:
+                best_agent = agent
+                best_load = current_load
+        
+        # Assigner la commande au meilleur agent trouvé
+        if best_agent:
+            # règle cart → nécessite humain
+            if best_agent.type == "cart":
+                if best_agent.id not in cart_human:
                     human_id = humans_available.pop(0)  # on réserve un humain
-                    cart_human[agent.id] = human_id
+                    cart_human[best_agent.id] = human_id
 
-            assignments[agent.id].append(order.id)
+            assignments[best_agent.id].append(order.id)
             placed = True
-            break
 
         if not placed:
             unassigned.append(order.id)
@@ -152,11 +161,7 @@ def allocate_first_fit_day2(
     )
 
 
-def estimate_total_distance(
-    orders: List[Order],
-    products: Dict[str, Product],
-    warehouse: Warehouse
-) -> int:
+def estimate_total_distance(orders: List[Order], products: Dict[str, Product], warehouse: Warehouse) -> int:
     total = 0
     for order in orders:
         for item in order.items:

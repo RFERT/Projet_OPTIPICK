@@ -98,7 +98,6 @@ def optimize_agent_route(
     
     return route, distance
 
-
 def optimize_team_routes(
     assignments: dict,
     orders: List[Order],
@@ -136,9 +135,6 @@ def optimize_team_routes(
             routes[agent_id] = {'route': route, 'distance': distance}
     
     return routes
-
-
-# ========== Fonctions Jour 3 - Complémentaires ==========
 
 def extract_unique_locations(products: List[Product]) -> Set[Location]:
     unique_locations = set()  # ← Ensemble VIDE
