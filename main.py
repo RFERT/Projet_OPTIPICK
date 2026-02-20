@@ -4,42 +4,46 @@ from src.loader import load_json
 from src.models import * 
 from src.utils import *
 from src.routing import extract_unique_locations, build_nodes_with_entry, compute_distance_matrix, nearest_neighbor_tsp, calculate_route_distance
-# ---------------------------
-def run_day1(warehouse, products, team, orders):
-    print("\n=== JOUR 1 : Allocation naïve (sans contraintes) ===")
+import pdb
 
-    result = allocate_first_fit_day1(orders, team, products)
+def run_day1(warehouse: Warehouse, products: Dict[str, Product], agents: List[Agent], orders: List[Order]):
+    print("\nJOUR 1 : Allocation naïve (sans contraintes)")
 
-    print("\n== Allocation (First-Fit) ==")
-    for agent in team.agents.values():
-        oids = result.assignments[agent.id]
-        print(f"- {agent.id} ({agent.type}): {len(oids)} commande(s) -> {oids}")
+    # pdb.set_trace()
+    result = allocate_first_fit_day1(orders, agents, products)
+    print("\nAllocation (First-Fit)")
+    for agent in agents:
+        agent_orders = result.assignments[agent.id]
+        print(f"- {agent.id} ({agent.type}): {len(agent_orders)} commande(s) -> {agent_orders}")
 
-    if result.unassigned:
-        print("\n❗ Commandes NON assignées :", result.unassigned)
+    
+    print("\nCommandes NON assignées :", result.unassigned if len(result.unassigned) > 0 else "Aucune")
 
-    dist_one_way = estimate_total_distance(orders, products, warehouse, round_trip=False)
-    dist_round_trip = estimate_total_distance(orders, products, warehouse, round_trip=True)
+    dist_one_way = estimate_total_distance(orders, products, warehouse)
     assigned_count = sum(len(assignment_list) for assignment_list in result.assignments.values())
 
-    print("\n== Évaluation Jour 1 ==")
+    print("\nÉvaluation Jour 1")
     print(f"Nombre de commandes assignées : {assigned_count}/{len(orders)}")
-    print(f"Distance estimée (aller simple) : {dist_one_way}")
-    print(f"Distance estimée (aller-retour) : {dist_round_trip}")
+    print(f"Distance estimée (Allers retours pour chaque produit) : {dist_one_way}")
 
     print("\nUtilisation par agent (poids/volume total des commandes assignées) :")
-    for agent in team.agents.values():
+    for agent in agents:
         total_w = 0.0
         total_v = 0.0
-        for oid in result.assignments[agent.id]:
-            w, v = result.order_totals[oid]
+        max_w = 0.0
+        max_v = 0.0
+        
+        for order in result.assignments[agent.id]:
+            w, v = result.order_totals[order]
             total_w += w
             total_v += v
+            max_w = max(max_w, w)
+            max_v = max(max_v, v)
 
         print(
             f"- {agent.id}: nb_commandes={len(result.assignments[agent.id])} | "
-            f"poids={total_w:.2f}/{agent.capacity_weight} | "
-            f"volume={total_v:.2f}/{agent.capacity_volume}"
+            f"poids total={total_w:.2f}kg (max commande={max_w:.2f}kg) | "
+            f"volume total={total_v:.2f}dm³ (max commande={max_v:.2f}dm³)"
         )
 
 def run_day2(warehouse, products, agents, orders):
@@ -49,8 +53,8 @@ def run_day2(warehouse, products, agents, orders):
 
     print("\n== Allocation (First-Fit + contraintes) ==")
     for agent in agents:
-        oids = result.assignments[agent.id]
-        print(f"- {agent.id} ({agent.type}): {len(oids)} commande(s) -> {oids}")
+        orders = result.assignments[agent.id]
+        print(f"- {agent.id} ({agent.type}): {len(orders)} commande(s) -> {orders}")
 
     if result.unassigned:
         print("\n❗ Commandes NON assignées :", result.unassigned)
@@ -74,8 +78,8 @@ def run_day2(warehouse, products, agents, orders):
     for agent in agents:
         total_w = 0.0
         total_v = 0.0
-        for oid in result.assignments[agent.id]:
-            w, v = result.order_totals[oid]
+        for order in result.assignments[agent.id]:
+            w, v = result.order_totals[order]
             total_w += w
             total_v += v
 
@@ -85,7 +89,7 @@ def run_day2(warehouse, products, agents, orders):
             f"volume={total_v:.2f}/{agent.capacity_volume}"
         )
 
-def run_day3_step1(warehouse, products, team, orders):
+def run_day3_step1(warehouse, products, agents, orders):
     """
     JOUR 3 - ÉTAPE 1 : Extraire les emplacements uniques pour chaque agent.
     
@@ -94,10 +98,10 @@ def run_day3_step1(warehouse, products, team, orders):
     
     # D'abord, allocate les commandes aux agents (comme Jour 2)
     from src.allocation import allocate_first_fit_day2
-    result = allocate_first_fit_day2(orders, list(team.agents.values()), products, warehouse)
+    result = allocate_first_fit_day2(orders, agents, products, warehouse)
     
     # Pour chaque agent, extraire les emplacements uniques
-    for agent in team.agents.values():
+    for agent in agents:
         # Récupérer les IDs des commandes assignées à cet agent
         order_ids = result.assignments[agent.id]
         
@@ -126,7 +130,7 @@ def run_day3_step1(warehouse, products, team, orders):
             print(f"      • Position ({loc.x}, {loc.y})")
         print()
 
-def run_day3_step2(warehouse, products, team, orders):
+def run_day3_step2(warehouse, products, agents, orders):
     """
     JOUR 3 - ÉTAPE  : Ajouter l'entrée au début ET à la fin des emplacements.
     
@@ -138,10 +142,10 @@ def run_day3_step2(warehouse, products, team, orders):
     
     # D'abord, allocate les commandes aux agents (comme Jour 2)
     from src.allocation import allocate_first_fit_day2
-    result = allocate_first_fit_day2(orders, list(team.agents.values()), products, warehouse)
+    result = allocate_first_fit_day2(orders, agents, products, warehouse)
     
     # Pour chaque agent, construire la liste des nœuds TSP
-    for agent in team.agents.values():
+    for agent in agents:
         # Récupérer les IDs des commandes assignées à cet agent
         order_ids = result.assignments[agent.id]
         
@@ -182,7 +186,7 @@ def run_day3_step2(warehouse, products, team, orders):
         
         print()
 
-def run_day3_step3(warehouse, products, team, orders):
+def run_day3_step3(warehouse, products, agents, orders):
     """
     JOUR 3 - ÉTAPE : Calculer la matrice de distances Manhattan.
     """
@@ -190,10 +194,10 @@ def run_day3_step3(warehouse, products, team, orders):
     
     # D'abord, allocate les commandes aux agents (comme Jour 2)
     from src.allocation import allocate_first_fit_day2
-    result = allocate_first_fit_day2(orders, list(team.agents.values()), products, warehouse)
+    result = allocate_first_fit_day2(orders, agents, products, warehouse)
     
     # Pour chaque agent, construire et afficher la matrice de distances
-    for agent in team.agents.values():
+    for agent in agents:
         # Récupérer les IDs des commandes assignées à cet agent
         order_ids = result.assignments[agent.id]
         
@@ -259,7 +263,7 @@ def run_day3_step3(warehouse, products, team, orders):
         
         print()
 
-def run_day3_step4(warehouse, products, team, orders):
+def run_day3_step4(warehouse, products, agents, orders):
     """
     JOUR 3 - ÉTAPE 4 : Résoudre le TSP avec l'heuristique du PLUS PROCHE VOISIN.
     
@@ -273,10 +277,10 @@ def run_day3_step4(warehouse, products, team, orders):
     
     # D'abord, allocate les commandes aux agents (comme Jour 2)
     from src.allocation import allocate_first_fit_day2
-    result = allocate_first_fit_day2(orders, list(team.agents.values()), products, warehouse)
+    result = allocate_first_fit_day2(orders, agents, products, warehouse)
     
     # Pour chaque agent, résoudre son TSP personnel
-    for agent in team.agents.values():
+    for agent in agents:
         # Récupérer les IDs des commandes assignées à cet agent
         order_ids = result.assignments[agent.id]
         
@@ -340,31 +344,30 @@ def main():
     products = load_json(data_dir / "products.json")
     agents = load_json(data_dir / "agents.json")
     orders = load_json(data_dir / "orders.json")
-    
+    print("Données chargées depuis JSON")
+
     # DICT(JSON) -> objets python
     warehouse, products, agents, orders = JSON_to_py(warehouse, products, agents, orders)
-    print(warehouse)
-    warehouse.show()
-    # print("Warehouse:", warehouse.width, "x", warehouse.height, "| entry=", warehouse.entry_point)
+    print("Données converties en objets Python")
+    # warehouse.show()
     # print("Products:", len(products), "| Agents:", len(agents), "| Orders:", len(orders))
-    # print("Test Manhattan =", manhattan(Location(0, 0), Location(3, 2)))
 
-    # print("\n==============================")
-    # print("Comparaison : Jour 1 vs Jour 2")
-    # print("==============================")
+    print("\n=== RÉSULTATS ===")
+    # pdb.set_trace()
+    run_day1(warehouse, products, agents, orders)
 
-    # run_day1(warehouse, products, team, orders)
-    # run_day2(warehouse, products, team.agents.values(), orders)
+
+    # run_day2(warehouse, products, agents, orders)
     
     # # Jour 3 - Étape : Extraction des emplacements uniques
-    # run_day3_step1(warehouse, products, team, orders)
+    # run_day3_step1(warehouse, products, agents, orders)
     
     # # Jour 3 - Étape : Ajouter l'entrée (point de départ et retour)
-    # run_day3_step2(warehouse, products, team, orders)    
+    # run_day3_step2(warehouse, products, agents, orders)    
     # # Jour 3 - Étape : Calculer la matrice de distances
-    # run_day3_step3(warehouse, products, team, orders)
+    # run_day3_step3(warehouse, products, agents, orders)
     # # Jour 3 - Étape 4 : Résolution TSP (Nearest Neighbor)
-    # run_day3_step4(warehouse, products, team, orders)
+    # run_day3_step4(warehouse, products, agents, orders)
 
 if __name__ == "__main__":
     main()
