@@ -96,69 +96,66 @@ def allocate_first_fit_day2(orders: List[Order], agents: List[Agent], products: 
     assignments: Dict[str, List[str]] = {a.id: [] for a in agents}
     unassigned: List[str] = []
     order_totals: Dict[str, Tuple[float, float]] = {}
-
-    # humains disponibles pour accompagner les carts
-    humans_available: List[str] = [a.id for a in agents if a.type == "human"]
     cart_human: Dict[str, str] = {}  # cart_id -> human_id
-    
-    # Tri automatique des agents pour Jour 2 : robot -> cart -> human
-    type_priority = {"robot": 0, "cart": 1, "human": 2}
-    agents_sorted = sorted(agents, key=lambda a: type_priority.get(a.type, 99))
-
+    # Séparer les types d'agents
+    robots = [a for a in agents if a.type == "robot"]
+    humans = [a for a in agents if a.type == "human"]
+    carts = [a for a in agents if a.type == "cart"]
+    # Créer toutes les paires chariot-humain possibles (on va les réutiliser)
+    # Stratégie : 1 chariot avec 1 humain, autant que possible
+    # Exemple : C1-H1, C2-H2 (ou C1 reste seul si pas assez d'humains)
+    for i, cart in enumerate(carts):
+        if i < len(humans):
+            cart_human[cart.id] = humans[i].id
+    # Humains réservés pour accompagner les chariots
+    human_used_with_cart: set = set(cart_human.values())
     for order in orders:
         w, v = compute_order_totals(order, products)
         order_totals[order.id] = (w, v)
-
         placed = False
-        
-        # Stratégie "least loaded" : chercher l'agent avec le moins de commandes
-        # parmi ceux qui peuvent prendre la commande
-        best_agent = None
-        best_load = float('inf')
-        
-        for agent in agents_sorted:
-            if not check_capacity(order, agent, products):
-                continue
-            if not check_incompatibilities(order, products):
-                continue
-            if not check_robot_restrictions(order, agent, products):
-                continue
-            if not check_no_zones(order, agent, products, warehouse):
-                continue
+        # ÉTAPE 1 : Essayer les robots (meilleur équilibre de charge)
+        if not placed and robots:
+            best_robot = min(robots, key=lambda a: len(assignments[a.id]))
             
-            # Pour les carts, vérifier qu'un humain est disponible
-            if agent.type == "cart":
-                if agent.id not in cart_human and not humans_available:
-                    continue
-            
-            # Compter le nombre de commandes actuel pour cet agent
-            current_load = len(assignments[agent.id])
-            
-            # Prendre l'agent avec la charge minimale
-            if current_load < best_load:
-                best_agent = agent
-                best_load = current_load
-        
-        # Assigner la commande au meilleur agent trouvé
-        if best_agent:
-            # règle cart → nécessite humain
-            if best_agent.type == "cart":
-                if best_agent.id not in cart_human:
-                    human_id = humans_available.pop(0)  # on réserve un humain
-                    cart_human[best_agent.id] = human_id
-
-            assignments[best_agent.id].append(order.id)
-            placed = True
-
+            if (check_capacity(order, best_robot, products) and
+                check_incompatibilities(order, products) and
+                check_robot_restrictions(order, best_robot, products) and
+                check_no_zones(order, best_robot, products, warehouse)):
+                assignments[best_robot.id].append(order.id)
+                placed = True
+        # ÉTAPE 2 : Essayer les chariots avec leurs humains associés
+        if not placed and carts:
+            # Prioriser les chariots avec le moins de commandes
+            carts_with_humans = sorted(
+                [(cart, cart_human[cart.id]) for cart in carts if cart.id in cart_human],
+                key=lambda x: len(assignments[x[0].id]))
+            for cart, human_id in carts_with_humans:
+                if (check_capacity(order, cart, products) and
+                    check_incompatibilities(order, products) and
+                    check_robot_restrictions(order, cart, products) and
+                    check_no_zones(order, cart, products, warehouse)):
+                    assignments[cart.id].append(order.id)
+                    assignments[human_id].append(order.id)
+                    placed = True
+                    break
+        # ÉTAPE 3 : Essayer les humains libres (non associés à un chariot)
+        if not placed and humans:
+            free_humans = [h for h in humans if h.id not in human_used_with_cart]
+            if free_humans:
+                best_human = min(free_humans, key=lambda a: len(assignments[a.id]))
+                if (check_capacity(order, best_human, products) and
+                    check_incompatibilities(order, products) and
+                    check_robot_restrictions(order, best_human, products) and
+                    check_no_zones(order, best_human, products, warehouse)):
+                    assignments[best_human.id].append(order.id)
+                    placed = True
         if not placed:
             unassigned.append(order.id)
-
     return AllocationResult(
         assignments=assignments,
         unassigned=unassigned,
         order_totals=order_totals,
-        cart_human=cart_human,
-    )
+        cart_human=cart_human)
 
 
 def estimate_total_distance(orders: List[Order], products: Dict[str, Product], warehouse: Warehouse) -> int:

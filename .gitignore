@@ -1,5 +1,6 @@
 # Debug / development files
 results.txt
+.git.code-workspace
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

@@ -22,18 +22,10 @@ import json
 import time
 
 # Imports du projet
-from src.models import Agent, Order, Product, Warehouse, Location
-from src.utils import JSON_to_py, compute_order_totals, manhattan
-from src.constraints import (
-    check_capacity, check_incompatibilities, check_robot_restrictions, check_no_zones
-)
-from src.allocation import allocate_first_fit_day2
-from src.suite import TSPOptimizer, AllocationOptimizer, StorageOptimizer
-
-
-# ═══════════════════════════════════════════════════════════════════════════════
-# CONFIGURATION STREAMLIT
-# ═══════════════════════════════════════════════════════════════════════════════
+from src.models import *
+from src.utils import *
+from src.constraints import *
+from src.allocation import *
 
 st.set_page_config(
     page_title="OPTIPICK - Simulation Entrepôt",
@@ -78,9 +70,6 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 
-# ═══════════════════════════════════════════════════════════════════════════════
-# CHARGEMENT DES DONNÉES
-# ═══════════════════════════════════════════════════════════════════════════════
 
 @st.cache_resource
 def load_data():
@@ -463,31 +452,33 @@ def main():
         # Initialiser état simulation
         if 'sim_running' not in st.session_state:
             st.session_state.sim_running = False
+        if 'sim_speed' not in st.session_state:
+            st.session_state.sim_speed = 1.0
+        if 'sim_frames' not in st.session_state:
+            st.session_state.sim_frames = 30
         
-        # Contrôles
-        col_btn, col_params = st.columns([1, 3])
+        # Sliders pour configurer la simulation (toujours visibles)
+        st.markdown("### ⚙️ Paramètres de la Simulation")
+        col_speed, col_frames = st.columns(2)
         
-        with col_btn:
-            if st.button("🎬 Lancer Simulation", key="launch_sim_btn", use_container_width=True):
-                st.session_state.sim_running = True
-                st.rerun()
+        with col_speed:
+            st.session_state.sim_speed = st.slider("Vitesse", 0.1, 3.0, st.session_state.sim_speed, 0.1, key="sim_speed_slider")
+        with col_frames:
+            st.session_state.sim_frames = st.slider("Nombre de frames", 10, 100, st.session_state.sim_frames, key="sim_frames_slider")
         
-        with col_params:
-            col_speed, col_duration, col_frames = st.columns(3)
-            with col_speed:
-                sim_speed = st.slider("Vitesse", 0.1, 3.0, 1.0, 0.1, key="sim_speed")
-            with col_duration:
-                duration = st.slider("Durée (s)", 5, 60, 15, key="sim_duration")
-            with col_frames:
-                nb_frames = st.slider("Frames", 10, 100, 30, key="sim_frames")
+        # Bouton pour lancer
+        if st.button("🎬 Lancer Simulation", key="launch_sim_btn", use_container_width=True):
+            st.session_state.sim_running = True
         
         # Lancer la simulation si demandé
         if st.session_state.sim_running:
             st.info("🔄 Simulation en cours...")
             simulate_agent_movements(warehouse, products, assignments, orders, agents, 
-                                    nb_frames=nb_frames, sim_speed=sim_speed)
+                                    nb_frames=st.session_state.sim_frames, 
+                                    sim_speed=st.session_state.sim_speed)
             st.session_state.sim_running = False
         
+
         st.markdown("---")
         st.markdown("### 📊 Informations sur l'Allocation")
         
@@ -549,10 +540,6 @@ def main():
         
         plt.tight_layout()
         st.pyplot(fig, use_container_width=True)
-    
-    # ═══════════════════════════════════════════════════════════════════════════════
-    # PAGE 4 : STATISTIQUES & OPTIMISATION
-    # ═══════════════════════════════════════════════════════════════════════════════
     
     elif page == "📊 Statistiques & Optimisation":
         st.markdown("<div class='section-title'>Statistiques et métriques d'optimisation</div>",
