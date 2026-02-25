@@ -26,6 +26,10 @@ from src.models import *
 from src.utils import *
 from src.constraints import *
 from src.allocation import *
+from src.routing import *
+from src.loader import *
+from main import *
+
 
 st.set_page_config(
     page_title="OPTIPICK - Simulation Entrepôt",

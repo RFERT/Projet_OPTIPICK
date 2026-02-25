@@ -1,6 +1,6 @@
 from pathlib import Path
 from src.allocation import *
-from src.loader import load_json
+from src.loader import *
 from src.models import * 
 from src.utils import *
 from src.routing import *
