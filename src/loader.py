@@ -1,6 +1,6 @@
 import json
 from pathlib import Path
-from models import Warehouse, Product, Agent, Order, Location
+from .models import Warehouse, Product, Agent, Order, Location
 from typing import Dict, List
 
 def load_json(path: str):
