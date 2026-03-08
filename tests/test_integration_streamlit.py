@@ -1,12 +1,3 @@
-"""
-OPTIPICK - Tests d'intégration pour l'interface Streamlit
-═══════════════════════════════════════════════════════════════════════════════
-
-Tests pour valider que tous les modules fonctionnent ensemble correctement.
-
-Usage :
-    pytest test_integration_streamlit.py -v
-"""
 
 import pytest
 import json
@@ -21,10 +12,7 @@ from src.suite import TSPOptimizer, AllocationOptimizer, StorageOptimizer
 
 
 class TestDataLoading:
-    """Tests du chargement des données."""
-    
     def test_json_loading(self):
-        """Vérifie que les données JSON se chargent correctement."""
         warehouse, products, agents, orders = JSON_to_py()
         
         assert warehouse is not None
@@ -36,7 +24,6 @@ class TestDataLoading:
         assert len(orders) > 0
     
     def test_warehouse_structure(self):
-        """Vérifie que l'entrepôt est correctement structuré."""
         warehouse, _, _, _ = JSON_to_py()
         
         assert warehouse.grid is not None
@@ -45,7 +32,6 @@ class TestDataLoading:
         assert warehouse.entry_point == [0, 0]
     
     def test_agents_have_required_fields(self):
-        """Vérifie que tous les agents ont les champs requis."""
         _, _, agents, _ = JSON_to_py()
         
         for agent in agents:
@@ -57,10 +43,7 @@ class TestDataLoading:
 
 
 class TestAllocation:
-    """Tests de l'allocation des commandes."""
-    
     def test_allocation_completes_all_orders(self):
-        """Vérifie que toutes les commandes sont allouées."""
         warehouse, products, agents, orders = JSON_to_py()
         
         assignments, unassigned, _, _, _ = allocate_first_fit_day2(
@@ -75,7 +58,6 @@ class TestAllocation:
         assert len(unassigned) == 0 or len(unassigned) < len(orders) * 0.1
     
     def test_allocation_respects_capacity(self):
-        """Vérifie que les capacités sont respectées."""
         warehouse, products, agents, orders = JSON_to_py()
         
         assignments, _, order_totals, _, _ = allocate_first_fit_day2(
@@ -97,7 +79,6 @@ class TestAllocation:
                     f"{agent.id}: Volume {volume} > capacité {agent.capacity_volume}"
     
     def test_allocation_distribution(self):
-        """Vérifie que la charge est distribuée."""
         warehouse, products, agents, orders = JSON_to_py()
         
         assignments, _, _, _, _ = allocate_first_fit_day2(
@@ -113,10 +94,7 @@ class TestAllocation:
 
 
 class TestTSPOptimizer:
-    """Tests de l'optimiseur TSP."""
-    
     def test_tsp_extracts_locations(self):
-        """Vérifie l'extraction des emplacements."""
         warehouse, products, agents, orders = JSON_to_py()
         assignments, _, _, _, _ = allocate_first_fit_day2(
             orders, agents, products, warehouse
@@ -130,7 +108,6 @@ class TestTSPOptimizer:
         assert any(len(locs) > 0 for locs in locations.values())
     
     def test_distance_matrix_computation(self):
-        """Vérifie le calcul de la matrice de distances."""
         warehouse, _, _, _ = JSON_to_py()
         optimizer = TSPOptimizer(warehouse)
         
@@ -152,7 +129,6 @@ class TestTSPOptimizer:
         assert matrix[1][2] == 4  # Manhattan distance (3,0) -> (3,4)
     
     def test_nearest_neighbor_returns_valid_route(self):
-        """Vérifie que NN retourne une route valide."""
         warehouse, _, _, _ = JSON_to_py()
         optimizer = TSPOptimizer(warehouse)
         
@@ -171,7 +147,6 @@ class TestTSPOptimizer:
         assert 0 in route  # Début à l'entrée
     
     def test_route_optimization_reduces_distance(self):
-        """Vérifie que TSP réduit la distance."""
         warehouse, products, agents, orders = JSON_to_py()
         assignments, _, _, _, _ = allocate_first_fit_day2(
             orders, agents, products, warehouse
@@ -200,10 +175,7 @@ class TestTSPOptimizer:
 
 
 class TestAllocationOptimizer:
-    """Tests de l'optimiseur d'allocation."""
-    
     def test_compatible_orders_detection(self):
-        """Vérifie la détection des commandes compatibles."""
         warehouse, products, agents, orders = JSON_to_py()
         
         optimizer = AllocationOptimizer()
@@ -214,7 +186,6 @@ class TestAllocationOptimizer:
         assert all(isinstance(g, set) for g in groups)
     
     def test_product_distance_sum(self):
-        """Vérifie le calcul de distance produit."""
         warehouse, products, _, orders = JSON_to_py()
         
         optimizer = AllocationOptimizer()
@@ -228,10 +199,7 @@ class TestAllocationOptimizer:
 
 
 class TestStorageOptimizer:
-    """Tests de l'optimiseur de stockage."""
-    
     def test_frequency_computation(self):
-        """Vérifie le calcul de fréquence."""
         _, _, _, orders = JSON_to_py()
         
         optimizer = StorageOptimizer()
@@ -242,7 +210,6 @@ class TestStorageOptimizer:
         assert all(f >= 1 for f in frequency.values())
     
     def test_affinity_computation(self):
-        """Vérifie le calcul d'affinité."""
         _, _, _, orders = JSON_to_py()
         
         optimizer = StorageOptimizer()
@@ -253,7 +220,6 @@ class TestStorageOptimizer:
         assert all(a >= 1 for a in affinity.values())
     
     def test_storage_reorganization(self):
-        """Vérifie la proposition de réorganisation."""
         _, products, _, orders = JSON_to_py()
         
         optimizer = StorageOptimizer()
@@ -269,10 +235,7 @@ class TestStorageOptimizer:
 
 
 class TestIntegration:
-    """Tests d'intégration complète."""
-    
     def test_full_workflow(self):
-        """Teste le workflow complet : allocation -> TSP -> optimisation."""
         warehouse, products, agents, orders = JSON_to_py()
         
         # Étape 1 : Allocation
@@ -314,7 +277,6 @@ class TestIntegration:
         assert len(frequency) > 0
     
     def test_performance_metrics(self):
-        """Teste que les métriques de performance sont calculées."""
         warehouse, products, agents, orders = JSON_to_py()
         
         # Allocation
@@ -331,10 +293,6 @@ class TestIntegration:
         assert total_volume > 0
         assert total_commandes > 0
 
-
-# ═════════════════════════════════════════════════════════════════════════════
-# EXECUTION
-# ═════════════════════════════════════════════════════════════════════════════
 
 if __name__ == "__main__":
     # Lancer avec : pytest test_integration_streamlit.py -v

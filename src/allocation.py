@@ -169,27 +169,12 @@ def estimate_total_distance(orders: List[Order], products: Dict[str, Product], w
     return total
 
 
-# -------------------------------------------------
-# Optimisation TSP des itinéraires
-# -------------------------------------------------
 def optimize_allocation_routes(
     allocation_result: AllocationResult,
     orders: List[Order],
     products: Dict[str, Product],
     warehouse: Warehouse,
 ) -> AllocationResult:
-    """
-    Ajoute les itinéraires optimisés (TSP) aux résultats d'allocation.
-    
-    Args:
-        allocation_result: Résultats d'allocation (assignments)
-        orders: Liste de toutes les commandes
-        products: Dictionnaire des produits
-        warehouse: Entrepôt (pour le point d'entrée)
-    
-    Returns:
-        AllocationResult enrichi avec les routes optimisées
-    """
     from .routing import optimize_team_routes
     
     # Créer un dictionnaire des commandes

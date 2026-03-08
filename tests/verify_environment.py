@@ -1,12 +1,4 @@
-"""
-OPTIPICK - Script de vérification de l'environnement
-═══════════════════════════════════════════════════════════════════════════════
 
-Vérifie que tous les composants sont correctement installés et configurés.
-
-Usage :
-    python verify_environment.py
-"""
 
 import sys
 import subprocess
@@ -14,14 +6,12 @@ from pathlib import Path
 
 
 def print_header(text):
-    """Affiche un en-tête formaté."""
     print("\n" + "="*80)
     print(f"  {text}")
     print("="*80)
 
 
 def check_python_version():
-    """Vérifie la version Python."""
     print_header("✓ VÉRIFICATION PYTHON")
     
     version = sys.version_info
@@ -36,7 +26,6 @@ def check_python_version():
 
 
 def check_package(package_name, import_name=None):
-    """Vérifie si un package est installé."""
     if import_name is None:
         import_name = package_name
     
@@ -51,7 +40,6 @@ def check_package(package_name, import_name=None):
 
 
 def check_required_packages():
-    """Vérifie les packages Python requis."""
     print_header("✓ VÉRIFICATION PACKAGES PYTHON")
     
     packages = [
@@ -70,7 +58,6 @@ def check_required_packages():
 
 
 def check_data_files():
-    """Vérifie que les fichiers JSON sont présents."""
     print_header("✓ VÉRIFICATION FICHIERS DE DONNÉES")
     
     data_files = [
@@ -94,7 +81,6 @@ def check_data_files():
 
 
 def check_source_files():
-    """Vérifie que les fichiers source sont présents."""
     print_header("✓ VÉRIFICATION FICHIERS SOURCE")
     
     source_files = [
@@ -123,7 +109,6 @@ def check_source_files():
 
 
 def check_streamlit_installation():
-    """Vérifie que Streamlit peut être lancé."""
     print_header("✓ VÉRIFICATION STREAMLIT")
     
     try:
@@ -148,7 +133,6 @@ def check_streamlit_installation():
 
 
 def main():
-    """Lance tous les tests de vérification."""
     print("\n")
     print("╔" + "="*78 + "╗")
     print("║" + " "*78 + "║")

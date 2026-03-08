@@ -3,28 +3,10 @@ from .models import Order, Product
 
 
 class StorageOptimizer:
-    """
-    Analyse et optimise le stockage dans l'entrepôt.
-    
-    Objectifs :
-    1. Identifier les produits fréquemment commandés → placer près de l'entrée
-    2. Grouper produits souvent co-commandés → placer proches
-    3. Réorganiser pour minimiser les distances futures
-    """
-    
     def __init__(self):
         pass
     
     def compute_product_frequency(self, orders: List[Order]) -> Dict[str, int]:
-        """
-        Compte le nombre de fois que chaque produit est commandé.
-        
-        Args:
-            orders: Liste des commandes
-            
-        Returns:
-            Dict[product_id] = nombre de fois commandé
-        """
         frequency = {}
         
         for order in orders:
@@ -37,16 +19,6 @@ class StorageOptimizer:
         return frequency
     
     def compute_product_affinity(self, orders: List[Order]) -> Dict[Tuple[str, str], int]:
-        """
-        Calcule l'affinité entre paires de produits
-        (nombre de fois commandés ensemble).
-        
-        Args:
-            orders: Liste des commandes
-            
-        Returns:
-            Dict[(product_id_1, product_id_2)] = nombre de fois ensemble
-        """
         affinity = {}
         
         for order in orders:
@@ -66,21 +38,7 @@ class StorageOptimizer:
     
     def suggest_storage_reorganization(self, products: Dict[str, Product],
                                       orders: List[Order]) -> Dict[str, Any]:
-        """
-        Propose une réorganisation du stockage.
-        
-        Stratégie :
-        1. Produits très fréquents → Zone A (proche entrée)
-        2. Produits moyens → Zone B, C
-        3. Produits rares → Zone D, E (loin)
-        
-        Args:
-            products: Dict des produits
-            orders: Liste des commandes
-            
-        Returns:
-            Dict avec suggestions de réorganisation
-        """
+
         # Calculer fréquence
         frequency = self.compute_product_frequency(orders)
         

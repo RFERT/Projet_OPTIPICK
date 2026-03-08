@@ -1,0 +1,24 @@
+# Core Dependencies
+python-dateutil==2.8.2
+six==1.16.0
+
+# Data Processing & Numerical Computing
+numpy>=1.24.0
+pandas>=1.5.0
+
+# Web Framework & Visualization
+streamlit>=1.28.0
+matplotlib>=3.7.0
+plotly>=5.17.0
+
+# Additional Utilities
+Pillow>=10.0.0
+
+# Testing (Optional)
+pytest>=7.4.0
+pytest-cov>=4.1.0
+
+# Linting & Code Quality (Optional)
+pylint>=3.0.0
+black>=23.0.0
+flake8>=6.1.0

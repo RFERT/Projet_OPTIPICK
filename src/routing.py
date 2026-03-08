@@ -7,23 +7,6 @@ def nearest_neighbor_tsp(
     start: Location,
     distance_func: Callable[[Location, Location], float] = manhattan
 ) -> List[Location]:
-    """
-    Résout le TSP avec l'heuristique du Plus Proche Voisin (Nearest Neighbor).
-    
-    Args:
-        locations: Liste des emplacements à visiter
-        start: Point de départ (entrée de l'entrepôt)
-        distance_func: Fonction de calcul de distance (défaut: Manhattan)
-    
-    Returns:
-        Liste ordonnée des emplacements à visiter (incluant le retour à start)
-    
-    Algorithme:
-        1. Commencer au point de départ
-        2. À chaque étape, aller à l'emplacement non visité le plus proche
-        3. Répéter jusqu'à visiter tous les emplacements
-        4. Retourner au point de départ
-    """
     if not locations:
         return [start]
     
@@ -50,16 +33,6 @@ def calculate_route_distance(
     route: List[Location],
     distance_func: Callable[[Location, Location], float] = manhattan
 ) -> float:
-    """
-    Calcule la distance totale d'un itinéraire.
-    
-    Args:
-        route: Liste ordonnée des emplacements
-        distance_func: Fonction de calcul de distance
-    
-    Returns:
-        Distance totale du parcours
-    """
     total_distance = 0.0
     for i in range(len(route) - 1):
         total_distance += distance_func(route[i], route[i + 1])
@@ -72,19 +45,6 @@ def optimize_agent_route(
     warehouse_entry: Location,
     distance_func: Callable[[Location, Location], float] = manhattan
 ) -> Tuple[List[Location], float]:
-    """
-    Optimise l'itinéraire d'un agent pour ses commandes assignées.
-    
-    Args:
-        assigned_orders: Commandes assignées à l'agent
-        products: Dictionnaire des produits {product_id: Product}
-        warehouse_entry: Point d'entrée de l'entrepôt
-        distance_func: Fonction de calcul de distance
-    
-    Returns:
-        Tuple (itinéraire optimisé, distance totale)
-    """
-    # Extraire tous les emplacements uniques des produits dans les commandes
     locations = set()
     for order in assigned_orders:
         for item in order.items:
@@ -105,19 +65,6 @@ def optimize_team_routes(
     warehouse_entry: Location,
     distance_func: Callable[[Location, Location], float] = manhattan
 ) -> dict:
-    """
-    Optimise les itinéraires pour tous les agents d'une équipe.
-    
-    Args:
-        assignments: Dict {agent_id: [order_ids]}
-        orders: Liste de toutes les commandes
-        products: Dictionnaire des produits
-        warehouse_entry: Point d'entrée
-        distance_func: Fonction de calcul de distance
-    
-    Returns:
-        Dict {agent_id: {'route': [locations], 'distance': float}}
-    """
     orders_dict = {o.id: o for o in orders}
     routes = {}
     
@@ -137,10 +84,10 @@ def optimize_team_routes(
     return routes
 
 def extract_unique_locations(products: List[Product]) -> Set[Location]:
-    unique_locations = set()  # ← Ensemble VIDE
+    unique_locations = set()
     
     for product in products:
-        unique_locations.add(product.location)  # Ajouter l'emplacement du produit
+        unique_locations.add(product.location)
     
     return unique_locations
 
@@ -155,11 +102,8 @@ def build_nodes_with_entry(entry_point: Location, unique_locations: Set[Location
 
 
 def compute_distance_matrix(nodes: List[Location]) -> List[List[int]]:
-    """
-    Calcule la matrice des distances Manhattan entre tous les nœuds.
-    """
     n = len(nodes)
-    distance_matrix = [[0] * n for _ in range(n)]  # Matrice pré-créée de 0
+    distance_matrix = [[0] * n for _ in range(n)]
     
     # Pour chaque nœud de départ
     for node_from_index in range(n):
@@ -175,32 +119,11 @@ def compute_distance_matrix(nodes: List[Location]) -> List[List[int]]:
     return distance_matrix
 
 
-# ===== RÉSOLUTION TSP - HEURISTIQUE DU PLUS PROCHE VOISIN =====
-
 def nearest_neighbor_tsp(
     nodes: List[Location],
     start_index: int = 0,
     distance_func: Callable[[Location, Location], int] = manhattan
 ) -> Tuple[List[int], int]:
-    """
-    Résout le TSP avec l'heuristique du Plus Proche Voisin (Nearest Neighbor).
-    
-    Algorithme :
-        1. Commencer à l'entrée (index start_index)
-        2. À chaque étape, aller à l'emplacement non visité le plus proche
-        3. Répéter jusqu'à visiter tous les emplacements
-        4. Retourner à l'entrée
-    
-    Args:
-        nodes: Liste des emplacements (nœuds) à visiter
-        start_index: Index du nœud de départ (0 = entrée)
-        distance_func: Fonction de calcul de distance (défaut: Manhattan)
-    
-    Returns:
-        Tuple (route_indices, total_distance) où :
-        - route_indices: Liste des indices des nœuds dans l'ordre optimal
-        - total_distance: Distance totale du parcours
-    """
     n = len(nodes)
     unvisited = set(range(n))
     current = start_index
@@ -238,17 +161,6 @@ def calculate_route_distance(
     route_indices: List[int],
     distance_func: Callable[[Location, Location], int] = manhattan
 ) -> int:
-    """
-    Calcule la distance totale d'un itinéraire donné.
-    
-    Args:
-        nodes: Liste de tous les nœuds
-        route_indices: Liste ordonnée des indices des nœuds à visiter
-        distance_func: Fonction de calcul de distance
-    
-    Returns:
-        Distance totale du parcours
-    """
     total_distance = 0
     
     for i in range(len(route_indices) - 1):
@@ -259,56 +171,16 @@ def calculate_route_distance(
     return total_distance
 
 
-# ═══════════════════════════════════════════════════════════════════════════════
-# CLASSE TSPOptimizer - Optimisation avancée des tournées
-# ═══════════════════════════════════════════════════════════════════════════════
-
 import numpy as np
 from .models import Agent, Order, Product, Warehouse
 
 class TSPOptimizer:
-    """
-    Résout le problème du voyageur de commerce (TSP) pour chaque agent.
-    
-    Objectif : Trouver l'ordre optimal de visite des emplacements pour minimiser
-    la distance totale parcourue.
-    
-    Étapes :
-    1. Extraire les emplacements uniques pour chaque agent
-    2. Calculer la matrice de distances
-    3. Résoudre TSP avec heuristique Nearest Neighbor
-    4. Optionnel : Améliorer avec 2-opt
-    """
-    
     def __init__(self, warehouse: Warehouse):
-        """
-        Initialise l'optimiseur TSP.
-        
-        Args:
-            warehouse: L'entrepôt (contient entry_point et grille)
-        """
         self.warehouse = warehouse
         self.entry_point = Location(warehouse.entry_point.x, warehouse.entry_point.y)
     
     def extract_locations(self, agent_assignments: dict, 
                          orders: List[Order], products: dict) -> dict:
-        """
-        Extrait tous les emplacements uniques à visiter pour chaque agent.
-        
-        Exemple :
-        - Agent R1 a commandes [Order_001, Order_002]
-        - Order_001 contient Product_A (zone (1,1)), Product_B (zone (2,1))
-        - Order_002 contient Product_C (zone (1,2))
-        - Locations de R1 = {(1,1), (2,1), (1,2)}
-        
-        Args:
-            agent_assignments: Dict[agent_id] = List[order_id]
-            orders: Liste des commandes
-            products: Dict[product_id] = Product
-            
-        Returns:
-            Dict[agent_id] = Set[Location]
-        """
         locations_per_agent = {}
         
         for agent_id, order_ids in agent_assignments.items():
@@ -332,47 +204,18 @@ class TSPOptimizer:
         return locations_per_agent
     
     def compute_distance_matrix(self, locations: List[Location]) -> np.ndarray:
-        """
-        Calcule la matrice de distances (Manhattan) entre tous les emplacements.
-        
-        La matrice est carrée : distance[i][j] = distance de location_i à location_j
-        
-        Args:
-            locations: Liste des emplacements
-            
-        Returns:
-            Matrice de distances (numpy array)
-        """
         n = len(locations)
         matrix = np.zeros((n, n))
         
         for i in range(n):
             for j in range(n):
                 if i != j:
-                    # Distance de Manhattan : |x1 - x2| + |y1 - y2|
                     matrix[i][j] = abs(locations[i].x - locations[j].x) + \
                                   abs(locations[i].y - locations[j].y)
         
         return matrix
     
     def nearest_neighbor_tsp(self, locations: List[Location]) -> List[int]:
-        """
-        Résout TSP avec l'heuristique Nearest Neighbor (plus proche voisin).
-        
-        Algorithme :
-        1. Commencer à l'entrée (index 0)
-        2. À chaque étape, aller au plus proche voisin non visité
-        3. Retourner à l'entrée
-        
-        Complexité : O(n²)
-        Qualité : Généralement 85-95% de l'optimal
-        
-        Args:
-            locations: Liste des emplacements
-            
-        Returns:
-            Liste des indices dans l'ordre de visite
-        """
         n = len(locations)
         if n <= 1:
             return list(range(n))
@@ -388,7 +231,6 @@ class TSPOptimizer:
         
         # Visiter les n-1 autres emplacements
         for _ in range(n - 1):
-            # Trouver le plus proche non visité
             nearest = -1
             min_distance = float('inf')
             
@@ -405,16 +247,6 @@ class TSPOptimizer:
         return route
     
     def optimize_agent_route(self, agent: Agent, locations: List[Location]) -> Tuple[List[Location], float, float]:
-        """
-        Optimise la tournée d'un agent spécifique.
-        
-        Args:
-            agent: L'agent
-            locations: Emplacements à visiter
-            
-        Returns:
-            (route optimisée, distance totale, temps en minutes)
-        """
         if not locations:
             return [], 0.0, 0.0
         
@@ -434,15 +266,6 @@ class TSPOptimizer:
         return route, distance, time_minutes
     
     def _calculate_route_distance(self, route: List[Location]) -> float:
-        """
-        Calcule la distance totale d'une route.
-        
-        Args:
-            route: Liste des emplacements dans l'ordre
-            
-        Returns:
-            Distance totale
-        """
         total_distance = 0.0
         for i in range(len(route) - 1):
             loc1 = route[i]

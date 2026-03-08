@@ -1,16 +1,3 @@
-"""
-OPTIPICK - Interface Streamlit Interactive
-═══════════════════════════════════════════════════════════════════════════════
-
-Application Web pour visualiser :
-1. L'allocation des commandes aux agents
-2. La simulation des déplacements dans l'entrepôt
-3. Les statistiques d'optimisation (Jour 3-5)
-
-Usage :
-    streamlit run app_streamlit.py
-"""
-
 import streamlit as st
 import numpy as np
 import pandas as pd
@@ -77,7 +64,6 @@ st.markdown("""
 
 @st.cache_resource
 def load_data():
-    """Charge les données JSON du projet."""
     try:
         import json
         import os
@@ -109,27 +95,13 @@ def load_data():
         return None, None, None, None
 
 
-# ═══════════════════════════════════════════════════════════════════════════════
-# VISUALISATION DE L'ENTREPÔT
-# ═══════════════════════════════════════════════════════════════════════════════
+
 
 def draw_warehouse_grid(warehouse: Warehouse, products: Dict[str, Product],
                         agent_positions: Dict[str, Tuple[int, int]] = None,
                         highlight_locations: Set[Location] = None,
                         title: str = "Plan d'Entrepôt") -> plt.Figure:
-    """
-    Dessine le plan de l'entrepôt avec les zones et les emplacements.
-    
-    Args:
-        warehouse: L'entrepôt
-        products: Dict des produits
-        agent_positions: Positions actuelles des agents {agent_id: (x, y)}
-        highlight_locations: Emplacements à surligner
-        title: Titre du graphique
-        
-    Returns:
-        Figure matplotlib
-    """
+   
     fig, ax = plt.subplots(figsize=(12, 8))
     
     # Couleurs des zones
@@ -208,18 +180,7 @@ def draw_warehouse_grid(warehouse: Warehouse, products: Dict[str, Product],
 
 def draw_agent_route(warehouse: Warehouse, route: List[Location], 
                     agent_id: str, title: str = "Route d'agent") -> plt.Figure:
-    """
-    Dessine la route d'un agent.
     
-    Args:
-        warehouse: L'entrepôt
-        route: Liste des emplacements dans l'ordre
-        agent_id: ID de l'agent
-        title: Titre
-        
-    Returns:
-        Figure matplotlib
-    """
     fig, ax = plt.subplots(figsize=(10, 8))
     
     # Grille simple
@@ -260,10 +221,6 @@ def draw_agent_route(warehouse: Warehouse, route: List[Location],
     return fig
 
 
-# ═══════════════════════════════════════════════════════════════════════════════
-# INTERFACE UTILISATEUR
-# ═══════════════════════════════════════════════════════════════════════════════
-
 def main():
     # En-tête
     st.markdown("<div class='header-title'>📦 OPTIPICK - Simulation Entrepôt</div>",
@@ -287,9 +244,7 @@ def main():
         "🔍 Analyse Jour 5"
     ])
     
-    # ═══════════════════════════════════════════════════════════════════════════════
-    # PAGE 1 : ACCUEIL
-    # ═══════════════════════════════════════════════════════════════════════════════
+   
     
     if page == "🏠 Accueil":
         st.markdown("<div class='section-title'>Bienvenue dans OPTIPICK</div>",
@@ -338,9 +293,6 @@ def main():
         - 🟪 **Zone E** : Textile (réserve)
         """)
     
-    # ═══════════════════════════════════════════════════════════════════════════════
-    # PAGE 2 : ALLOCATION DES COMMANDES
-    # ═══════════════════════════════════════════════════════════════════════════════
     
     elif page == "📋 Allocation des commandes":
         st.markdown("<div class='section-title'>Allocation des commandes aux agents</div>",
@@ -426,9 +378,6 @@ def main():
                                 df_items = pd.DataFrame(items_data)
                                 st.dataframe(df_items, use_container_width=True)
     
-    # ═══════════════════════════════════════════════════════════════════════════════
-    # PAGE 3 : SIMULATION DES DÉPLACEMENTS
-    # ═══════════════════════════════════════════════════════════════════════════════
     
     elif page == "🚀 Simulation des déplacements":
         st.markdown("<div class='section-title'>🎬 Simulation en Temps Réel des Agents</div>",
@@ -645,9 +594,7 @@ def main():
             
             st.pyplot(fig)
     
-    # ═══════════════════════════════════════════════════════════════════════════════
-    # PAGE 5 : ANALYSE JOUR 5
-    # ═══════════════════════════════════════════════════════════════════════════════
+  
     
     elif page == "🔍 Analyse Jour 5":
         st.markdown("<div class='section-title'>JOUR 5 - Optimisation du stockage</div>",
@@ -728,25 +675,11 @@ def main():
                 """)
 
 
-# ═══════════════════════════════════════════════════════════════════════════════
-# SIMULATION EN TEMPS RÉEL DES AGENTS
-# ═══════════════════════════════════════════════════════════════════════════════
 
 def simulate_agent_movements(warehouse: Warehouse, products: Dict[str, Product],
                             assignments: Dict[str, List[str]], orders: List[Order],
                             agents: List[Agent], nb_frames: int = 30, sim_speed: float = 1.0) -> None:
-    """
-    Simule les mouvements de tous les agents en temps réel.
     
-    Args:
-        warehouse: L'entrepôt
-        products: Dictionnaire des produits
-        assignments: Allocation {agent_id: [order_ids]}
-        orders: Liste des commandes
-        agents: Liste des agents
-        nb_frames: Nombre de frames pour la simulation
-        sim_speed: Multiplicateur de vitesse
-    """
     
     # Préparer les données des agents
     agent_dict = {a.id: a for a in agents}

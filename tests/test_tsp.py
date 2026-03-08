@@ -1,18 +1,10 @@
-"""
-Script de test pour l'algorithme TSP (Nearest Neighbor)
 
-⚠️ NOTE: Ce test est maintenant intégré au projet principal dans main.py (Jour 3)
-Exécutez simplement: python main.py
-
-Ce script peut être utilisé pour tester de manière isolée le TSP.
-"""
 
 from src.models import Location
 from src.routing import nearest_neighbor_tsp, calculate_route_distance
 from src.utils import manhattan
 
 def test_nearest_neighbor_simple():
-    """Test simple du TSP avec l'heuristique du Plus Proche Voisin"""
     print("=== Test TSP - Plus Proche Voisin ===\n")
     
     # Points d'entrée (entrepôt)
