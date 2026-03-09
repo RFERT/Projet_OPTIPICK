@@ -13,5 +13,5 @@ Write-Host ""
 # Aller au répertoire du projet
 Set-Location $PSScriptRoot
 
-# Lancer Streamlit
-& streamlit run app_streamlit.py
+# Lancer Streamlit via main.py
+& python main.py --streamlit

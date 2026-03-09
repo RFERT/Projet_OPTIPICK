@@ -50,7 +50,10 @@ class Warehouse:
 
         warehouse_colors = [[color_map[cell] for cell in row] for row in self.grid]
         plt.imshow(warehouse_colors, cmap='tab10')
-        plt.colorbar()
+        cbar = plt.colorbar()
+        cbar.set_ticks([0,1,2,3,4,5,6,7])
+        cbar.set_ticklabels(["A","B","C","D","E","Allée","Entrée","Erreur"])
+        # plt.colorbar()
         plt.show()
 
 class Agent:
