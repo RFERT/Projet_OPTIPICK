@@ -1,5 +1,16 @@
 [
   {
+    "id": "Product_002",
+    "name": "USB Cable Orion #002",
+    "category": "electronics",
+    "weight": 0.2,
+    "volume": 0.6,
+    "location": [1, 1],
+    "frequency": "very_high",
+    "fragile": false,
+    "incompatible_with": []
+  },
+  {
     "id": "Product_001",
     "name": "Laptop Nova #001",
     "category": "electronics",
@@ -11,37 +22,15 @@
     "incompatible_with": ["Product_016"]
   },
   {
-    "id": "Product_002",
-    "name": "USB Cable Orion #002",
-    "category": "electronics",
-    "weight": 0.2,
-    "volume": 0.6,
-    "location": [1, 0],
-    "frequency": "very_high",
-    "fragile": false,
-    "incompatible_with": []
-  },
-  {
     "id": "Product_003",
     "name": "Headphones Apex #003",
     "category": "electronics",
     "weight": 0.4,
     "volume": 1.8,
-    "location": [4, 0],
+    "location": [3, 1],
     "frequency": "high",
     "fragile": true,
     "incompatible_with": ["Product_015"]
-  },
-  {
-    "id": "Product_004",
-    "name": "Keyboard Zen #004",
-    "category": "electronics",
-    "weight": 1.1,
-    "volume": 3.2,
-    "location": [3, 4],
-    "frequency": "medium",
-    "fragile": false,
-    "incompatible_with": []
   },
   {
     "id": "Product_005",
@@ -49,7 +38,40 @@
     "category": "electronics",
     "weight": 0.3,
     "volume": 1.0,
-    "location": [1, 4],
+    "location": [4, 1],
+    "frequency": "high",
+    "fragile": false,
+    "incompatible_with": []
+  },
+  {
+    "id": "Product_004",
+    "name": "Keyboard Zen #004",
+    "category": "electronics",
+    "weight": 1.1,
+    "volume": 3.2,
+    "location": [1, 2],
+    "frequency": "medium",
+    "fragile": false,
+    "incompatible_with": []
+  },
+  {
+    "id": "Product_008",
+    "name": "Comic Orion #008",
+    "category": "books",
+    "weight": 0.3,
+    "volume": 0.7,
+    "location": [6, 1],
+    "frequency": "very_high",
+    "fragile": false,
+    "incompatible_with": []
+  },
+  {
+    "id": "Product_007",
+    "name": "Textbook Nova #007",
+    "category": "books",
+    "weight": 1.4,
+    "volume": 2.6,
+    "location": [7, 1],
     "frequency": "high",
     "fragile": false,
     "incompatible_with": []
@@ -60,41 +82,8 @@
     "category": "books",
     "weight": 0.6,
     "volume": 1.1,
-    "location": [5, 0],
+    "location": [8, 1],
     "frequency": "medium",
-    "fragile": false,
-    "incompatible_with": []
-  },
-  {
-    "id": "Product_007",
-    "name": "Textbook Nova #007",
-    "category": "books",
-    "weight": 1.4,
-    "volume": 2.6,
-    "location": [6, 1],
-    "frequency": "high",
-    "fragile": false,
-    "incompatible_with": []
-  },
-  {
-    "id": "Product_008",
-    "name": "Comic Orion #008",
-    "category": "books",
-    "weight": 0.3,
-    "volume": 0.7,
-    "location": [7, 3],
-    "frequency": "very_high",
-    "fragile": false,
-    "incompatible_with": []
-  },
-  {
-    "id": "Product_009",
-    "name": "Cookbook Apex #009",
-    "category": "books",
-    "weight": 1.1,
-    "volume": 2.0,
-    "location": [6, 4],
-    "frequency": "low",
     "fragile": false,
     "incompatible_with": []
   },
@@ -104,21 +93,21 @@
     "category": "books",
     "weight": 0.8,
     "volume": 1.5,
-    "location": [5, 3],
+    "location": [6, 2],
     "frequency": "medium",
     "fragile": false,
     "incompatible_with": []
   },
   {
-    "id": "Product_011",
-    "name": "Coffee Boreal #011",
-    "category": "food",
-    "weight": 1.0,
-    "volume": 3.0,
-    "location": [8, 0],
-    "frequency": "high",
+    "id": "Product_009",
+    "name": "Cookbook Apex #009",
+    "category": "books",
+    "weight": 1.1,
+    "volume": 2.0,
+    "location": [7, 2],
+    "frequency": "low",
     "fragile": false,
-    "incompatible_with": ["Product_015", "Product_016"]
+    "incompatible_with": []
   },
   {
     "id": "Product_012",
@@ -126,10 +115,21 @@
     "category": "food",
     "weight": 0.5,
     "volume": 1.2,
-    "location": [9, 1],
+    "location": [6, 4],
     "frequency": "very_high",
     "fragile": false,
     "incompatible_with": ["Product_016"]
+  },
+  {
+    "id": "Product_011",
+    "name": "Coffee Boreal #011",
+    "category": "food",
+    "weight": 1.0,
+    "volume": 3.0,
+    "location": [7, 4],
+    "frequency": "high",
+    "fragile": false,
+    "incompatible_with": ["Product_015", "Product_016"]
   },
   {
     "id": "Product_013",
@@ -137,7 +137,7 @@
     "category": "food",
     "weight": 2.0,
     "volume": 4.0,
-    "location": [8, 3],
+    "location": [8, 4],
     "frequency": "medium",
     "fragile": false,
     "incompatible_with": ["Product_015"]
@@ -148,7 +148,7 @@
     "category": "food",
     "weight": 1.2,
     "volume": 2.0,
-    "location": [9, 4],
+    "location": [9, 5],
     "frequency": "low",
     "fragile": true,
     "incompatible_with": ["Product_016"]
@@ -159,7 +159,7 @@
     "category": "chemical",
     "weight": 4.8,
     "volume": 6.5,
-    "location": [2, 6],
+    "location": [1, 7],
     "frequency": "high",
     "fragile": false,
     "incompatible_with": ["Product_003", "Product_011", "Product_013"]
@@ -170,10 +170,15 @@
     "category": "chemical",
     "weight": 7.6,
     "volume": 9.0,
-    "location": [4, 7],
+    "location": [2, 7],
     "frequency": "medium",
     "fragile": false,
-    "incompatible_with": ["Product_001", "Product_011", "Product_012", "Product_014"]
+    "incompatible_with": [
+      "Product_001",
+      "Product_011",
+      "Product_012",
+      "Product_014"
+    ]
   },
   {
     "id": "Product_017",
@@ -181,7 +186,7 @@
     "category": "chemical",
     "weight": 3.2,
     "volume": 5.0,
-    "location": [1, 7],
+    "location": [3, 8],
     "frequency": "low",
     "fragile": false,
     "incompatible_with": ["Product_011"]
@@ -192,7 +197,7 @@
     "category": "textile",
     "weight": 0.4,
     "volume": 6.0,
-    "location": [0, 3],
+    "location": [6, 7],
     "frequency": "high",
     "fragile": false,
     "incompatible_with": []
@@ -203,7 +208,7 @@
     "category": "textile",
     "weight": 1.1,
     "volume": 10.0,
-    "location": [0, 4],
+    "location": [7, 7],
     "frequency": "medium",
     "fragile": false,
     "incompatible_with": []
@@ -214,7 +219,7 @@
     "category": "textile",
     "weight": 1.3,
     "volume": 12.0,
-    "location": [5, 7],
+    "location": [8, 8],
     "frequency": "low",
     "fragile": false,
     "incompatible_with": []

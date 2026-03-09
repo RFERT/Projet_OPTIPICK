@@ -24,7 +24,6 @@ TABLE DES MATIÈRES
 9. BARÈME ET ÉVALUATION
 10. CONSEILS TECHNIQUES
 11. RESSOURCES
-12. PIPELINE DES APPELS DE FONCTIONS
 
 ═══════════════════════════════════════════════════════════════════════════════
 
@@ -119,17 +118,17 @@ DISPOSITION (exemple simplifié 10×8) :
     0   1   2   3   4   5   6   7   8   9
 
 ┌───┬───┬───┬───┬───┬───┬───┬───┬───┬───┐
-0 │ E │ A │ A │ A │ A │ B │ B │ B │ C │ C │
+0 │ 1 │ A │ A │ A │ A │ B │ B │ B │ C │ C │
 ├───┼───┼───┼───┼───┼───┼───┼───┼───┼───┤
-1 │ │ A │ A │ A │ A │ B │ B │ B │ C │ C │
+1 │ 0 │ A │ A │ A │ A │ B │ B │ B │ C │ C │
 ├───┼───┼───┼───┼───┼───┼───┼───┼───┼───┤
-2 │ │ │ │ │ │ │ │ │ │ │ (allée)
+2 │ 0 │ 0 │ 0 │ 0 │ 0 │ 0 │ 0 │ 0 │ 0 │ 0 │ (allée)
 ├───┼───┼───┼───┼───┼───┼───┼───┼───┼───┤
 3 │ E │ A │ A │ A │ A │ B │ B │ B │ C │ C │
 ├───┼───┼───┼───┼───┼───┼───┼───┼───┼───┤
 4 │ E │ A │ A │ A │ A │ B │ B │ B │ C │ C │
 ├───┼───┼───┼───┼───┼───┼───┼───┼───┼───┤
-5 │ │ │ │ │ │ │ │ │ │ │ (allée)
+5 │ 0 │ 0 │ 0 │ 0 │ 0 │ 0 │ 0 │ 0 │ 0 │ 0 │ (allée)
 ├───┼───┼───┼───┼───┼───┼───┼───┼───┼───┤
 6 │ E │ D │ D │ D │ D │ E │ E │ E │ E │ E │
 ├───┼───┼───┼───┼───┼───┼───┼───┼───┼───┤
@@ -948,183 +947,3 @@ INSPIRATION
 - Amazon Robotics : https://www.amazonrobotics.com/
 - Kiva Systems (racheté par Amazon)
 - Ocado automated warehouse
-
-═══════════════════════════════════════════════════════════════════════════════ 12. PIPELINE DES APPELS DE FONCTIONS
-═══════════════════════════════════════════════════════════════════════════════
-
-Ce schema montre l'ordre d'appel des fonctions principales dans chaque
-point d'entree du projet. Les sous-fonctions sont indentees sous leur
-fonction appelante.
-
-12.1 POINT D'ENTREE : MODE CONSOLE (python main.py)
-───────────────────────────────────────────────────────────────────────────────
-
-main.py : main()
-|
-+-- launch_streamlit(root) # bouton Streamlit -> subprocess streamlit
-+-- launch_console(root) # bouton Console -> run_console()
-|
-+-- run_console()
-|
-+-- loader.load_all_data()
-| +-- load_json("warehouse.json") -> JSON_to_py()
-| +-- load_json("products.json") -> JSON_to_py()
-| +-- load_json("agents.json") -> JSON_to_py()
-| +-- load_json("orders.json") -> JSON_to_py()
-|
-+-- Run_days.run_day1(warehouse, products, agents, orders)
-| +-- allocate_first_fit_day1()
-| | +-- split_agents_by_type()
-| | +-- try_robot_day1() / try_cart_human_day1() / try_human_day1()
-| +-- print_assignments()
-| +-- print_day1_evaluation()
-| +-- print_day1_detailed_utilization()
-|
-+-- Run_days.run_day2(warehouse, products, agents, orders)
-| +-- allocate_first_fit_day2()
-| | +-- split_agents_by_type()
-| | +-- pair_carts_with_humans()
-| | +-- try_robot_day2() / try_cart_human_day2() / try_human_day2()
-| | +-- check_capacity()
-| | +-- check_incompatibilities() -> can_combine()
-| | +-- check_robot_restrictions()
-| | +-- check_no_zones() -> get_zone_of_location()
-| +-- print_assignments()
-| +-- print_day2_cart_human()
-| +-- print_day2_evaluation()
-| +-- print_agent_utilization()
-|
-+-- Run_days.run_day3(assignments, agents, orders, products, warehouse)
-| +-- TSPOptimizer(warehouse)
-| +-- optimizer.extract_locations()
-| | +-- get_order_locations()
-| +-- optimize_all_agent_routes()
-| | +-- optimizer.optimize_agent_route()
-| | +-- nearest_neighbor_tsp()
-| | | +-- compute_distance_matrix()
-| | | +-- find_nearest_unvisited()
-| | +-- build_optimized_route()
-| | +-- \_calculate_route_distance()
-| +-- print_day3_summary()
-|
-+-- Run_days.run_day4(assignments, agents, orders, products)
-| +-- AllocationOptimizer()
-| +-- optimizer.find_compatible_orders()
-| | +-- \_can_combine_orders()
-| +-- compute_load_stats()
-|
-+-- Run_days.run_day5(orders, products, agents, warehouse)
-+-- StorageOptimizer()
-+-- optimizer.compute_product_frequency()
-+-- optimizer.compute_product_affinity()
-+-- print_top_products()
-+-- optimizer.suggest_storage_reorganization()
-+-- print_reorganization_summary()
-+-- print_day5_recommendations()
-
-12.2 POINT D'ENTREE : MODE STREAMLIT (streamlit run main.py)
-───────────────────────────────────────────────────────────────────────────────
-
-app_streamlit.py : run_app()
-|
-+-- setup_page_config()
-+-- css()
-+-- load_data() # @st.cache_data -> loader.load_all_data()
-|
-+-- [Sidebar navigation]
-|
-+-- page_accueil() # Page "Accueil"
-|
-+-- page_allocation() # Page "Allocation"
-| +-- build_allocation_table()
-| +-- show_order_details()
-|
-+-- page_simulation() # Page "Simulation"
-| +-- init_simulation_state()
-| +-- show_simulation_controls()
-| +-- allocate_first_fit_day2()
-| +-- show_allocation_summary()
-| +-- build_agent_distribution_data()
-| +-- draw_distribution_chart()
-| +-- simulate_agent_movements_streamlit()
-| +-- compute_all_agent_positions()
-| +-- render_simulation_frame()
-| +-- visualization.draw_simulation_frame()
-| +-- build_zone_grid()
-| +-- draw_product_dots()
-| +-- draw_agent_routes_background()
-| +-- draw_agent_current_positions()
-| +-- draw_entry_point()
-|
-+-- page_statistiques() # Page "Statistiques"
-| +-- run_day3_analysis()
-| | +-- TSPOptimizer.extract_locations()
-| | +-- TSPOptimizer.optimize_agent_route()
-| +-- draw_day3_charts()
-| +-- run_day4_analysis()
-| | +-- AllocationOptimizer.find_compatible_orders()
-| +-- draw_day4_chart()
-|
-+-- page_jour5() # Page "Jour 5"
-+-- run_day5_analysis()
-| +-- StorageOptimizer.compute_product_frequency()
-| +-- StorageOptimizer.compute_product_affinity()
-| +-- StorageOptimizer.suggest_storage_reorganization()
-+-- draw_frequency_chart()
-+-- show_day5_recommendations()
-
-12.3 ARCHITECTURE DES MODULES (src/)
-───────────────────────────────────────────────────────────────────────────────
-
-models.py : Location -> Warehouse, Agent, Product, OrderItem, Order
-(classes de donnees, pas de dependances externes)
-
-loader.py : load_json() -> JSON_to_py() -> load_all_data()
-(charge les JSON et instancie les objets models)
-
-utils.py : compute_order_totals(), manhattan()
-(fonctions utilitaires partagees)
-
-constraints.py : check_capacity() -> can_combine() -> check_incompatibilities()
--> check_robot_restrictions() -> get_zone_of_location()
--> check_no_zones() -> is_human_available_for_cart()
--> get_available_human_for_cart() -> can_pair_cart_human()
-
-allocation.py : split_agents_by_type()
--> try_robot_day1/try_cart_human_day1/try_human_day1
--> allocate_first_fit_day1()
--> pair_carts_with_humans()
--> try_robot_day2/try_cart_human_day2/try_human_day2
--> allocate_first_fit_day2()
--> estimate_total_distance()
--> optimize_allocation_routes()
-
-routing.py : extract_unique_locations() -> build_nodes_with_entry()
--> compute_distance_matrix() -> nearest_neighbor_tsp()
--> calculate_route_distance() -> optimize_agent_route()
--> optimize_team_routes() + TSPOptimizer (classe pour jour 3)
-
-optimization.py : AllocationOptimizer
--> compute_product_distance_sum()
--> \_can_combine_orders() -> find_compatible_orders()
-
-storage.py : StorageOptimizer
--> compute_product_frequency()
--> compute_product_affinity()
--> suggest_storage_reorganization()
-
-visualization.py : draw_grid_cells() -> draw_highlighted_locations()
--> draw_agent_markers() -> draw_entry_point()
--> setup_warehouse_axes() -> draw_warehouse_grid()
--> draw_agent_route()
--> collect_agent_route_locations()
--> simulate_agent_movements_data()
--> compute_agent_position_at_progress()
--> build_zone_grid() -> draw_product_dots()
--> draw_agent_routes_background()
--> draw_agent_current_positions()
--> draw_simulation_frame()
-
-Run_days.py : print_assignments(), print_agent_utilization()
--> run_day1() -> run_day2() -> run_day3()
--> run_day4() -> run_day5()
